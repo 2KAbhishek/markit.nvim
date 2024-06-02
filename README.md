@@ -116,7 +116,7 @@ The following default mappings are included:
     m[              Move to previous mark
     m:              Preview mark. This will prompt you for a specific mark to
                     preview; press <cr> to preview the next mark.
-
+    Mx              Toggle mark x
     m[0-9]          Add a bookmark from bookmark group[0-9].
     dm[0-9]         Delete all bookmarks from bookmark group[0-9].
     m}              Move to the next bookmark having the same type as the bookmark under
@@ -147,6 +147,7 @@ The following keys are available to be passed to the mapping table:
 ```
   set_next               Set next available lowercase mark at cursor.
   toggle                 Toggle next available mark at cursor.
+  toggle_mark            Toggle a mark at the current line.
   delete_line            Deletes all marks on current line.
   delete_buf             Deletes all marks in current buffer.
   next                   Goes to next mark in buffer.
@@ -178,6 +179,7 @@ marks.nvim also provides a list of `<Plug>` mappings for you, in case you want t
 <Plug>(Marks-set)
 <Plug>(Marks-setnext)
 <Plug>(Marks-toggle)
+<Plug>(Marks-togglemark)
 <Plug>(Marks-delete)
 <Plug>(Marks-deleteline)
 <Plug>(Marks-deletebuf)

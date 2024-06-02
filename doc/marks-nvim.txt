@@ -184,6 +184,7 @@ The following mappings are defined by default:
     m[              Move to previous mark
     m:              Preview mark. This will prompt you for a specific mark to
                     preview; press <cr> to preview the next mark.
+    Mx              Toggle mark at the current line
     m[0-9]          Add a bookmark from bookmark group[0-9].
     dm[0-9]         Delete all bookmarks from bookmark group[0-9].
     m}              Move to the next bookmark having the same type as the bookmark under
@@ -200,6 +201,7 @@ The following are the available keys of the mapping table (see above as well):
   set_next               Set the next available alphabetical mark
   set                    Set a named mark (will wait for input).
   toggle                 Toggle a mark at the cursor.
+  toggle_mark            Toggle a mark at the current line.
   next                   Move to the next mark
   prev                   Move to the previous mark.
   delete                 Delete a mark (will wait for input).
