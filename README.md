@@ -40,8 +40,8 @@ require'marks'.setup {
   cyclic = true,
   -- whether the shada file is updated after modifying uppercase marks. default false
   force_write_shada = false,
-  -- how often (in ms) to redraw signs/recompute mark positions. 
-  -- higher values will have better performance but may cause visual lag, 
+  -- how often (in ms) to redraw signs/recompute mark positions.
+  -- higher values will have better performance but may cause visual lag,
   -- while lower values may cause performance penalties. default 150.
   refresh_interval = 250,
   -- sign priorities for each type of mark - builtin marks, uppercase marks, lowercase
@@ -116,7 +116,7 @@ The following default mappings are included:
     m[              Move to previous mark
     m:              Preview mark. This will prompt you for a specific mark to
                     preview; press <cr> to preview the next mark.
-                    
+
     m[0-9]          Add a bookmark from bookmark group[0-9].
     dm[0-9]         Delete all bookmarks from bookmark group[0-9].
     m}              Move to the next bookmark having the same type as the bookmark under
@@ -204,6 +204,8 @@ marks.nvim defines the following highlight groups:
 `MarkSignHL` The highlight group for displayed mark signs.
 
 `MarkSignNumHL` The highlight group for the number line in a signcolumn.
+
+`MarkSignLineHL` The highlight group for the whole line the sign is placed in.
 
 `MarkVirtTextHL` The highlight group for bookmark virtual text annotations.
 
