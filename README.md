@@ -2,15 +2,14 @@
 
 > This is a fork of [marks.nvim](https://github.com/chentoast/marks.nvim) with some fixes and improvements from the community.
 
-A better user experience for interacting with and manipulating Vim marks.
-Requires Neovim 0.5+.
+A better user experience for interacting with and manipulating marks.
 
 ![markit.nvim](images/screenshot.png)
 
 ## Features
 
 - view marks in the sign column
-- quickly add, delete, and toggle marks
+- add, delete, and toggle marks
 - cycle between marks
 - preview marks in floating windows
 - extract marks to quickfix/location list
@@ -18,14 +17,17 @@ Requires Neovim 0.5+.
 
 ## Installation
 
-I recommend you use your favorite vim plugin manager, like vim-plug, or packer.
+With lazy.nvim
 
-For example, using vim-plug, you would add the following line:
+```lua
+    {
+        -- 'chentoast/marks.nvim',
+        '2kabhishek/markit.nvim',
+        config = load_config('tools.marks'),
+        event = { 'BufReadPre', 'BufNewFile' },
+    },
 
-`Plug 'chentoast/marks.nvim'`
-
-If you want to manually install, you can clone this repository, and add the path
-to the cloned repo to your runtimepath: `set rtp+=/path/to/cloned/repo`.
+```
 
 ## Setup
 
@@ -39,10 +41,6 @@ require'marks'.setup {
   cyclic = true,
   -- whether the shada file is updated after modifying uppercase marks. default false
   force_write_shada = false,
-  -- how often (in ms) to redraw signs/recompute mark positions.
-  -- higher values will have better performance but may cause visual lag,
-  -- while lower values may cause performance penalties. default 150.
-  refresh_interval = 250,
   -- sign priorities for each type of mark - builtin marks, uppercase marks, lowercase
   -- marks, and bookmarks.
   -- can be either a table with all/none of the keys, or a single number, in which case
@@ -69,36 +67,6 @@ require'marks'.setup {
 ```
 
 See `:help marks-setup` for all of the keys that can be passed to the setup function.
-
-## Telescope
-
-There is a [telescope](https://github.com/nvim-telescope/telescope.nvim) extension allowing to list marks through telescope.
-
-To activate it you need to load the extension:
-```lua
-local status_ok, telescope = pcall(require, "telescope")
-if not status_ok then
-	return
-end
-
-telescope.load_extension("marks_nvim")
-```
-
-You can then use the extension methods to list marks instead of using the native loclist system.
-You simply need to call these methods in your mappings.
-
-```lua
-require('telescope').extensions.marks_nvim.marks_list_buf(opts) --[[ List buffer marks ]]
-require('telescope').extensions.marks_nvim.marks_list_all(opts) --[[ List all marks ]]
-require('telescope').extensions.marks_nvim.bookmarks_list_group(1, opts) --[[ List a bookmark group marks (takes the group number as  argument) ]]
-require('telescope').extensions.marks_nvim.bookmarks_list_all(opts) --[[ List all bookmarks marks ]]
-```
-
-These methods will use your `path_display` telescope configuraiton to display paths.
-You can also pass a specific property for one method in the `opts` table. Eg.
-```lua
-require('telescope').extensions.marks_nvim.marks_list_all({ path_display = 'shorten' })
-```
 
 ## Mappings
 
@@ -131,13 +99,11 @@ You can change the keybindings by setting the `mapping` table in the setup funct
 
 ```lua
 require'marks'.setup {
-  mappings = {
-    set_next = "m,",
-    next = "m]",
-    preview = "m:",
-    set_bookmark0 = "m0",
-    prev = false -- pass false to disable only this default mapping
-  }
+    mappings = {
+        set = 'M',
+        toggle_mark = 'm',
+        set_next = false -- pass false to disable only this default mapping
+    },
 }
 ```
 
@@ -172,33 +138,79 @@ The following keys are available to be passed to the mapping table:
                          above the bookmark. Requires neovim 0.6+ and is not mapped by default.
 ```
 
-marks.nvim also provides a list of `<Plug>` mappings for you, in case you want to map things via vimscript. The list of provided mappings are:
+marks.nvim also provides a list of lua APIs for you, which can be used to setup mappings, here's what my config with which key looks like:
 
-```
-<Plug>(Marks-set)
-<Plug>(Marks-setnext)
-<Plug>(Marks-toggle)
-<Plug>(Marks-togglemark)
-<Plug>(Marks-delete)
-<Plug>(Marks-deleteline)
-<Plug>(Marks-deletebuf)
-<Plug>(Marks-preview)
-<Plug>(Marks-next)
-<Plug>(Marks-prev)
+```lua
+    m = {
+        name = icons.ui.Bookmark .. 'Marks',
+        b = { "<cmd>lua require('telescope').extensions.marks_nvim.bookmarks_list_all()<cr>", 'Bookmarks' },
+        D = { "<cmd>lua require('marks').delete_buf()<cr>", 'Delete Buffer' },
+        d = { "<cmd>lua require('marks').delete_line()<cr>", 'Delete Line' },
+        P = { "<cmd>lua require('marks').preview()<cr>", 'Preview' },
+        x = { "<cmd>lua require('marks').delete_bookmark()<cr>", 'Delete Bookmark' },
+        h = { "<cmd>lua require('marks').next_bookmark()<cr>", 'Next Bookmark' },
+        j = { "<cmd>lua require('marks').next()<cr>", 'Next' },
+        k = { "<cmd>lua require('marks').prev()<cr>", 'Previous' },
+        l = { "<cmd>lua require('marks').prev_bookmark()<cr>", 'Previous Bookmark' },
+        m = { '<cmd>Telescope marks<cr>', 'All Marks' },
+        s = { "<cmd>lua require('marks').set_next()<cr>", 'Set Next' },
+        t = { "<cmd>lua require('marks').toggle()<cr>", 'Toggle' },
 
-<Plug>(Marks-delete-bookmark)
-<Plug>(Marks-next-bookmark)
-<Plug>(Marks-prev-bookmark)
-<Plug>(Marks-set-bookmark[0-9])
-<Plug>(Marks-delete-bookmark[0-9])
-<Plug>(Marks-toggle-bookmark[0-9])
-<Plug>(Marks-next-bookmark[0-9])
-<Plug>(Marks-prev-bookmark[0-9])
+        ['1'] = { "<cmd>lua require('marks').toggle_bookmark1()<cr>", 'Toggle Bookmark 0' },
+        ['2'] = { "<cmd>lua require('marks').toggle_bookmark2()<cr>", 'Toggle Bookmark 2' },
+        ['3'] = { "<cmd>lua require('marks').toggle_bookmark3()<cr>", 'Toggle Bookmark 3' },
+        ['4'] = { "<cmd>lua require('marks').toggle_bookmark4()<cr>", 'Toggle Bookmark 4' },
+
+        n = {
+            name = 'Next Bookmark Group',
+            ['1'] = { "<cmd>lua require('marks').next_bookmark1()<cr>", 'Next Bookmark 1' },
+            ['2'] = { "<cmd>lua require('marks').next_bookmark2()<cr>", 'Next Bookmark 2' },
+            ['3'] = { "<cmd>lua require('marks').next_bookmark3()<cr>", 'Next Bookmark 3' },
+            ['4'] = { "<cmd>lua require('marks').next_bookmark4()<cr>", 'Next Bookmark 4' },
+        },
+
+        p = {
+            name = 'Previous Bookmark Group',
+            ['1'] = { "<cmd>lua require('marks').prev_bookmark1()<cr>", 'Previous Bookmark 1' },
+            ['2'] = { "<cmd>lua require('marks').prev_bookmark2()<cr>", 'Previous Bookmark 2' },
+            ['3'] = { "<cmd>lua require('marks').prev_bookmark3()<cr>", 'Previous Bookmark 3' },
+            ['4'] = { "<cmd>lua require('marks').prev_bookmark4()<cr>", 'Previous Bookmark 4' },
+        },
+    },
 ```
 
 See `:help marks-mappings` for more information.
 
-## Highlights and Commands
+## Telescope
+
+There's a telescope extension allowing to list marks through telescope.
+
+To activate it you need to load the extension:
+
+```lua
+local telescope = require("telescope")
+
+telescope.load_extension("marks_nvim")
+```
+
+You can then use the extension methods to list marks instead of using the native loclist system.
+You need to call these methods in your mappings.
+
+```lua
+require('telescope').extensions.marks_nvim.marks_list_buf(opts) -- List buffer marks
+require('telescope').extensions.marks_nvim.marks_list_all(opts) -- List all marks
+require('telescope').extensions.marks_nvim.bookmarks_list_group(1, opts) -- List a bookmark group marks (takes the group number as  argument)
+require('telescope').extensions.marks_nvim.bookmarks_list_all(opts) -- List all bookmarks marks
+```
+
+These methods will use your `path_display` telescope configuraiton to display paths.
+You can also pass a specific property for one method in the `opts` table.
+
+```lua
+require('telescope').extensions.marks_nvim.marks_list_all({ path_display = 'shorten' })
+```
+
+## Highlights
 
 marks.nvim defines the following highlight groups:
 
@@ -210,10 +222,12 @@ marks.nvim defines the following highlight groups:
 
 `MarkVirtTextHL` The highlight group for bookmark virtual text annotations.
 
+## Commands
+
 marks.nvim also defines the following commands:
 
 `:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional
-  buffer number to toggle signs for that buffer only.
+buffer number to toggle signs for that buffer only.
 
 `:MarksListBuf` Fill the location list with all marks in the current buffer.
 
@@ -237,12 +251,14 @@ There are also corresponding commands for those who prefer the quickfix list:
 
 `:BookmarksQFListAll`
 
+## Todos
+
+- [ ] Operator pending mappings and count aware movement mappings
+- [ ] Bookmarks are not persistent across sessions
+- [ ] Telescope extension only lists one mark
+
 ## See Also
 
 [vim-signature](https://github.com/kshenoy/vim-signature)
 
 [vim-bookmarks](https://github.com/MattesGroeger/vim-bookmarks)
-
-## Todos
-
-- Operator pending mappings and count aware movement mappings
