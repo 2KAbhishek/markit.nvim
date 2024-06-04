@@ -5,11 +5,7 @@
 A better user experience for interacting with and manipulating Vim marks.
 Requires Neovim 0.5+.
 
-![](../assets/marks-demo.gif)
-
-Screenshot:
-
-![](../assets/demo_screenshot.png)
+![markit.nvim](images/screenshot.png)
 
 ## Features
 
