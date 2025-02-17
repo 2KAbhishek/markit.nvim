@@ -18,8 +18,12 @@ local function group_under_cursor(groups, bufnr, pos)
   pos = pos or a.nvim_win_get_cursor(0)
 
   for group_nr, group in pairs(groups) do
-    if group.marks[bufnr] and group.marks[bufnr][pos[1]] then
-      return group_nr
+    if group.marks[bufnr] then
+      for _, mark in pairs(group.marks[bufnr]) do
+        if mark.line == pos[1] then
+          return group_nr
+        end
+      end
     end
   end
   return nil
@@ -290,88 +294,89 @@ function Bookmarks:delete_all(group_nr)
   end
 end
 
-function Bookmarks:next(group_nr)
+local function get_group_nr_or_first(self, bufnr, pos)
+  local group_nr = group_under_cursor(self.groups, bufnr, pos)
+  if not group_nr then
+    for nr, _ in pairs(self.groups) do
+      group_nr = nr
+      break
+    end
+  end
+  return group_nr
+end
+
+local function find_mark(items, bufnr, pos, next_mode)
+  if vim.tbl_isempty(items) then
+    return nil
+  end
+
+  -- Sort by buffer and line number
+  table.sort(items, function(a, b)
+    if a.bufnr == b.bufnr then
+      if next_mode then
+        return a.lnum < b.lnum
+      else
+        return a.lnum > b.lnum
+      end
+    end
+    if next_mode then
+      return a.bufnr < b.bufnr
+    else
+      return a.bufnr > b.bufnr
+    end
+  end)
+
+  -- Find the next/prev mark
+  local found_mark = nil
+  for _, mark in ipairs(items) do
+    if next_mode then
+      if (mark.bufnr > bufnr) or (mark.bufnr == bufnr and mark.lnum > pos[1]) then
+        found_mark = mark
+        break
+      end
+    else
+      if (mark.bufnr < bufnr) or (mark.bufnr == bufnr and mark.lnum < pos[1]) then
+        found_mark = mark
+        break
+      end
+    end
+  end
+
+  -- Wrap around if no mark found
+  return found_mark or items[1]
+end
+
+function Bookmarks:navigate(group_nr, next_mode)
   local bufnr = a.nvim_get_current_buf()
   local pos = a.nvim_win_get_cursor(0)
 
+  -- If no group specified and not on a mark, use the first available group
   if not group_nr then
-    group_nr = group_under_cursor(self.groups, bufnr, pos)
+    group_nr = get_group_nr_or_first(self, bufnr, pos)
   end
 
-  local group = self.groups[group_nr]
-  if not group then
+  -- Get all marks for this group from all bookmark files
+  local items = self:get_group_list(group_nr)
+  local target_mark = find_mark(items, bufnr, pos, next_mode)
+
+  if not target_mark then
     return
   end
 
-  local marks = flatten(group.marks)
-
-  if vim.tbl_isempty(marks) then
-    return
+  if target_mark.bufnr ~= bufnr then
+    vim.cmd("silent b" .. target_mark.bufnr)
+    -- Ensure marks are loaded in the new buffer
+    self:load()
   end
+  a.nvim_win_set_cursor(0, { target_mark.lnum, target_mark.col - 1 })
+end
 
-  local function comparator(x, y, _)
-    if (x.line > y.line and x.buf == y.buf) or (x.buf > y.buf) then
-      return true
-    end
-
-    return false
-  end
-
-  local next = utils.search(
-    marks,
-    { buf = bufnr, line = pos[1] },
-    { buf = math.huge, line = math.huge },
-    comparator,
-    false
-  )
-
-  if not next then
-    next = marks[1]
-  end
-
-  if next.buf ~= bufnr then
-    vim.cmd("silent b" .. next.buf)
-  end
-  a.nvim_win_set_cursor(0, { next.line, next.col })
+function Bookmarks:next(group_nr)
+  self:navigate(group_nr, true)
 end
 
 function Bookmarks:prev(group_nr)
-  local bufnr = a.nvim_get_current_buf()
-  local pos = a.nvim_win_get_cursor(0)
-
-  if not group_nr then
-    group_nr = group_under_cursor(self.groups, bufnr, pos)
-  end
-
-  local group = self.groups[group_nr]
-  if not group then
-    return
-  end
-
-  local marks = flatten(group.marks)
-
-  if vim.tbl_isempty(marks) then
-    return
-  end
-
-  local function comparator(x, y, _)
-    if (x.line < y.line and x.buf == y.buf) or (x.buf < y.buf) then
-      return true
-    end
-
-    return false
-  end
-
-  local prev = utils.search(marks, { buf = bufnr, line = pos[1] }, { buf = -1, line = -1 }, comparator, false)
-
-  if not prev then
-    prev = marks[#marks]
-  end
-
-  if prev.buf ~= bufnr then
-    vim.cmd("silent b" .. prev.buf)
-  end
-  a.nvim_win_set_cursor(0, { prev.line, prev.col })
+  self:navigate(group_nr, false)
 end
 
 function Bookmarks:annotate(group_nr)
