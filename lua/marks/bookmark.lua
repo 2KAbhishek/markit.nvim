@@ -1,5 +1,6 @@
 local utils = require("marks.utils")
 local a = vim.api
+local Path = require("plenary.path")
 
 local Bookmarks = {}
 
@@ -49,7 +50,110 @@ function Bookmarks:init(group_nr)
   self.groups[group_nr] = { ns = ns, sign = sign, virt_text = virt_text, marks = {} }
 end
 
-function Bookmarks:place_mark(group_nr, bufnr)
+-- Add bookmark persistence functions
+function Bookmarks:get_bookmarks_dir()
+  local dir = Path:new(vim.fn.stdpath('data')):joinpath('markit_bookmarks')
+  if not dir:exists() then
+    dir:mkdir()
+  end
+  return dir
+end
+
+function Bookmarks:get_root_dir()
+  -- Try to get git root first
+  local git_dir = vim.fn.system('git rev-parse --show-toplevel 2>/dev/null'):gsub('\n', '')
+  if vim.v.shell_error == 0 and git_dir ~= "" then
+    return git_dir
+  end
+
+  -- Fallback to current working directory
+  return vim.fn.getcwd()
+end
+
+function Bookmarks:get_bookmark_file()
+  local root = self:get_root_dir()
+  -- Create a valid filename from the root path
+  local filename = root:gsub("[^%w_%-]", "_")
+  return Path:new(self:get_bookmarks_dir()):joinpath(filename .. '.json')
+end
+
+function Bookmarks:save()
+  local data = self:serialize()
+  local bookmark_file = self:get_bookmark_file()
+
+  local file = io.open(bookmark_file.filename, 'w')
+  if file then
+    file:write(vim.json.encode(data))
+    file:close()
+  end
+end
+
+function Bookmarks:load()
+  local bookmark_file = self:get_bookmark_file()
+
+  if bookmark_file:exists() then
+    local file = io.open(bookmark_file.filename, 'r')
+    if file then
+      local content = file:read('*all')
+      file:close()
+      local ok, data = pcall(vim.json.decode, content)
+      if ok then
+        self:deserialize(data)
+      end
+    end
+  end
+end
+
+function Bookmarks:serialize()
+  local data = {}
+  for group_nr, group in pairs(self.groups) do
+    -- Convert numeric keys to strings to avoid sparse array issues
+    local group_key = tostring(group_nr)
+    data[group_key] = {
+      marks = {},
+      sign = self.signs[group_nr],
+      virt_text = self.virt_text[group_nr]
+    }
+    for bufnr, buffer_marks in pairs(group.marks) do
+      local filename = vim.api.nvim_buf_get_name(bufnr)
+      -- Only save marks from named buffers
+      if filename and filename ~= "" then
+        data[group_key].marks[filename] = {}
+        -- Convert the marks table to an array
+        for _, mark in pairs(buffer_marks) do
+          table.insert(data[group_key].marks[filename], {
+            line = mark.line,
+            col = mark.col
+          })
+        end
+      end
+    end
+  end
+  return data
+end
+
+function Bookmarks:deserialize(data)
+  if not data then return end
+
+  for group_key, group_data in pairs(data) do
+    -- Convert string key back to number
+    local group_nr = tonumber(group_key)
+    if not self.groups[group_nr] then
+      self:init(group_nr)
+    end
+
+    for filename, marks in pairs(group_data.marks) do
+      local bufnr = vim.fn.bufadd(filename)
+      -- Ensure buffer is loaded before adding marks
+      vim.fn.bufload(bufnr)
+      for _, mark in ipairs(marks) do
+        self:place_mark(group_nr, bufnr, {mark.line, mark.col})
+      end
+    end
+  end
+end
+
+function Bookmarks:place_mark(group_nr, bufnr, pos)
   bufnr = bufnr or a.nvim_get_current_buf()
   local group = self.groups[group_nr]
 
@@ -58,12 +162,7 @@ function Bookmarks:place_mark(group_nr, bufnr)
     group = self.groups[group_nr]
   end
 
-  local pos = a.nvim_win_get_cursor(0)
-
-  if group.marks[bufnr] and group.marks[bufnr][pos[1]] then
-    -- disallow multiple bookmarks on a single line
-    return
-  end
+  pos = pos or a.nvim_win_get_cursor(0)
 
   local data = { buf = bufnr, line = pos[1], col = pos[2], sign_id = -1 }
 
@@ -87,7 +186,10 @@ function Bookmarks:place_mark(group_nr, bufnr)
   if not group.marks[bufnr] then
     group.marks[bufnr] = {}
   end
-  group.marks[bufnr][pos[1]] = data
+
+  -- Generate a unique key for this mark
+  local mark_key = string.format("%d_%d", pos[1], #group.marks[bufnr] + 1)
+  group.marks[bufnr][mark_key] = data
 
   if self.prompt_annotate[group_nr] then
     self:annotate(group_nr)
@@ -105,23 +207,33 @@ function Bookmarks:toggle_mark(group_nr, bufnr)
 
   local pos = a.nvim_win_get_cursor(0)
 
-  if group.marks[bufnr] and group.marks[bufnr][pos[1]] then
-    self:delete_mark(group_nr)
+  -- Check if there's a mark at current line
+  local found_mark = nil
+  if group.marks[bufnr] then
+    for key, mark in pairs(group.marks[bufnr]) do
+      if mark.line == pos[1] then
+        found_mark = key
+        break
+      end
+    end
+  end
+
+  if found_mark then
+    self:delete_mark(group_nr, bufnr, found_mark)
   else
     self:place_mark(group_nr)
   end
 end
 
-function Bookmarks:delete_mark(group_nr, bufnr, line)
+function Bookmarks:delete_mark(group_nr, bufnr, mark_key)
   bufnr = bufnr or a.nvim_get_current_buf()
-  line = line or a.nvim_win_get_cursor(0)[1]
   local group = self.groups[group_nr]
 
   if not group then
     return
   end
 
-  local mark = group.marks[bufnr][line]
+  local mark = group.marks[bufnr] and group.marks[bufnr][mark_key]
 
   if not mark then
     return
@@ -132,7 +244,7 @@ function Bookmarks:delete_mark(group_nr, bufnr, line)
   end
 
   a.nvim_buf_del_extmark(bufnr, group.ns, mark.extmark_id)
-  group.marks[bufnr][line] = nil
+  group.marks[bufnr][mark_key] = nil
 end
 
 function Bookmarks:delete_mark_cursor()
@@ -144,7 +256,20 @@ function Bookmarks:delete_mark_cursor()
     return
   end
 
-  self:delete_mark(group_nr, bufnr, pos[1])
+  -- Find the mark key for the current line
+  local found_mark = nil
+  if self.groups[group_nr].marks[bufnr] then
+    for key, mark in pairs(self.groups[group_nr].marks[bufnr]) do
+      if mark.line == pos[1] then
+        found_mark = key
+        break
+      end
+    end
+  end
+
+  if found_mark then
+    self:delete_mark(group_nr, bufnr, found_mark)
+  end
 end
 
 function Bookmarks:delete_all(group_nr)

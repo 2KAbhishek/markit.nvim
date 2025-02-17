@@ -203,6 +203,8 @@ local function setup_autocommands()
     autocmd BufEnter * lua require'marks'.refresh(true)
     autocmd CursorHold * lua require'marks'.refresh()
     autocmd BufDelete * lua require'marks'._on_delete()
+    autocmd VimLeavePre * lua require'marks'.bookmark_state:save()
+    autocmd DirChanged * lua require'marks'.bookmark_state:load()
   augroup end]]
 end
 
@@ -268,6 +270,8 @@ function M.setup(config)
     mark_priority[3] = config.sign_priority
     M.bookmark_state.priority = config.sign_priority
   end
+
+  M.bookmark_state:load()
 end
 
 return M
