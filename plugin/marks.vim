@@ -1,5 +1,5 @@
 if exists("g:loaded_marks")
-  finish
+    finish
 endif
 let g:loaded_marks = 1
 
@@ -37,9 +37,9 @@ nnoremap <Plug>(Marks-next-bookmark) <cmd> lua require'marks'.next_bookmark()<cr
 nnoremap <Plug>(Marks-prev-bookmark) <cmd> lua require'marks'.prev_bookmark()<cr>
 
 for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-  exe "nnoremap <Plug>(Marks-set-bookmark"..i..") <cmd> lua require'marks'.set_bookmark"..i.."()<cr>"
-  exe "nnoremap <Plug>(Marks-delete-bookmark"..i..") <cmd> lua require'marks'.delete_bookmark"..i.."()<cr>"
-  exe "nnoremap <Plug>(Marks-toggle-bookmark"..i..") <cmd> lua require'marks'.toggle_bookmark"..i.."()<cr>"
-  exe "nnoremap <Plug>(Marks-next-bookmark"..i..") <cmd> lua require'marks'.next_bookmark"..i.."()<cr>"
-  exe "nnoremap <Plug>(Marks-prev-bookmark"..i..") <cmd> lua require'marks'.prev_bookmark"..i.."()<cr>"
+    exe "nnoremap <Plug>(Marks-set-bookmark"..i..") <cmd> lua require'marks'.set_bookmark"..i.."()<cr>"
+    exe "nnoremap <Plug>(Marks-delete-bookmark"..i..") <cmd> lua require'marks'.delete_bookmark"..i.."()<cr>"
+    exe "nnoremap <Plug>(Marks-toggle-bookmark"..i..") <cmd> lua require'marks'.toggle_bookmark"..i.."()<cr>"
+    exe "nnoremap <Plug>(Marks-next-bookmark"..i..") <cmd> lua require'marks'.next_bookmark"..i.."()<cr>"
+    exe "nnoremap <Plug>(Marks-prev-bookmark"..i..") <cmd> lua require'marks'.prev_bookmark"..i.."()<cr>"
 endfor

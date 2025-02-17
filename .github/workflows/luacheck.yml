@@ -2,9 +2,9 @@ name: LuaCheck
 
 on:
   push:
-    branches: [ master ]
+    branches: [main]
   pull_request:
-    branches: [ master ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -20,6 +20,6 @@ jobs:
 
       - name: install_luacheck
         run: luarocks install luacheck
-        
+
       - name: run_luacheck
         run: luacheck lua/marks
