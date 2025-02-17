@@ -446,22 +446,41 @@ end
 
 function Bookmarks:get_group_list(group_nr)
   local items = {}
-  if not group_nr or not self.groups[group_nr] then
+  if not group_nr then
     return items
   end
 
-  for bufnr, buffer_marks in pairs(self.groups[group_nr].marks) do
-    for line, mark in pairs(buffer_marks) do
-      local text = a.nvim_buf_get_lines(bufnr, line - 1, line, true)[1]
-      local filename = vim.api.nvim_buf_get_name(bufnr)
-      table.insert(items, {
-        bufnr = bufnr,
-        lnum = line,
-        col = mark.col + 1,
-        group = group_nr,
-        line = vim.trim(text),
-        path = filename,
-      })
+  -- Get all bookmark files from the bookmarks directory
+  local bookmarks_dir = self:get_bookmarks_dir()
+  local files = vim.fn.glob(bookmarks_dir.filename .. '/*.json', true, true)
+
+  for _, file in ipairs(files) do
+    local f = io.open(file, 'r')
+    if f then
+      local content = f:read('*all')
+      f:close()
+      local ok, data = pcall(vim.json.decode, content)
+      if ok and data and data[tostring(group_nr)] then
+        local group_data = data[tostring(group_nr)]
+        for filepath, marks in pairs(group_data.marks) do
+          -- Try to get line content if file exists and is readable
+          if vim.fn.filereadable(filepath) == 1 then
+            local bufnr = vim.fn.bufadd(filepath)
+            vim.fn.bufload(bufnr)
+            for _, mark in ipairs(marks) do
+              local text = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)[1] or ""
+              table.insert(items, {
+                bufnr = bufnr,
+                lnum = mark.line,
+                col = mark.col + 1,
+                group = group_nr,
+                line = vim.trim(text),
+                path = filepath,
+              })
+            end
+          end
+        end
+      end
     end
   end
 
@@ -469,26 +488,52 @@ function Bookmarks:get_group_list(group_nr)
 end
 
 function Bookmarks:get_all_list()
-  local items = {}
-  for group_nr, group in pairs(self.groups) do
-    for bufnr, buffer_marks in pairs(group.marks) do
-      for line, mark in pairs(buffer_marks) do
-        local text = a.nvim_buf_get_lines(bufnr, line - 1, line, true)[1]
-        local filename = vim.api.nvim_buf_get_name(bufnr)
+  local results = {}
 
-        table.insert(items, {
-          bufnr = bufnr,
-          lnum = line,
-          col = mark.col + 1,
-          group = group_nr,
-          line = vim.trim(text),
-          path = filename,
-        })
+  -- Iterate through all bookmark files in the bookmarks directory
+  local bookmarks_dir = self:get_bookmarks_dir()
+  local files = vim.fn.glob(bookmarks_dir.filename .. '/*.json', true, true)
+
+  for _, file in ipairs(files) do
+    local f = io.open(file, 'r')
+    if f then
+      local content = f:read('*all')
+      f:close()
+      local ok, data = pcall(vim.json.decode, content)
+      if ok and data then
+        -- Process each group in the bookmark file
+        for group_key, group_data in pairs(data) do
+          local group_nr = tonumber(group_key)
+          -- Process each file's bookmarks
+          for filepath, marks in pairs(group_data.marks) do
+            -- Get the line content for each mark
+            for _, mark in ipairs(marks) do
+              local line_content = ""
+              local bufnr = vim.fn.bufadd(filepath)
+              -- Try to get line content if file exists and is readable
+              if vim.fn.filereadable(filepath) == 1 then
+                vim.fn.bufload(bufnr)
+                local lines = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)
+                if #lines > 0 then
+                  line_content = lines[1]
+                end
+              end
+
+              table.insert(results, {
+                group = group_data.sign or tostring(group_nr),
+                path = filepath,
+                lnum = mark.line,
+                col = mark.col,
+                line = line_content
+              })
+            end
+          end
+        end
       end
     end
   end
 
-  return items
+  return results
 end
 
 function Bookmarks:to_list(list_type, group_nr)
@@ -501,9 +546,14 @@ function Bookmarks:to_list(list_type, group_nr)
 
   local items = {}
   for bufnr, buffer_marks in pairs(self.groups[group_nr].marks) do
-    for line, mark in pairs(buffer_marks) do
-      local text = a.nvim_buf_get_lines(bufnr, line - 1, line, true)[1]
-      table.insert(items, { bufnr = bufnr, lnum = line, col = mark.col + 1, text = text })
+    for mark_key, mark in pairs(buffer_marks) do
+      local text = a.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, true)[1]
+      table.insert(items, {
+        bufnr = bufnr,
+        lnum = mark.line,
+        col = mark.col + 1,
+        text = text
+      })
     end
   end
 
@@ -517,11 +567,11 @@ function Bookmarks:all_to_list(list_type)
   local items = {}
   for group_nr, group in pairs(self.groups) do
     for bufnr, buffer_marks in pairs(group.marks) do
-      for line, mark in pairs(buffer_marks) do
-        local text = a.nvim_buf_get_lines(bufnr, line - 1, line, true)[1]
+      for mark_key, mark in pairs(buffer_marks) do
+        local text = a.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, true)[1]
         table.insert(items, {
           bufnr = bufnr,
-          lnum = line,
+          lnum = mark.line,
           col = mark.col + 1,
           text = "bookmark group " .. group_nr .. ": " .. text,
         })
