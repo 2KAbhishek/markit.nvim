@@ -41,6 +41,10 @@ require'marks'.setup {
   cyclic = true,
   -- whether the shada file is updated after modifying uppercase marks. default false
   force_write_shada = false,
+  -- how often (in ms) to redraw signs/recompute mark positions. 
+  -- higher value means better performance but may cause visual lag,
+  -- while lower value may cause performance penalties. default 150.
+  refresh_interval = 150,
   -- sign priorities for each type of mark - builtin marks, uppercase marks, lowercase
   -- marks, and bookmarks.
   -- can be either a table with all/none of the keys, or a single number, in which case
@@ -66,7 +70,22 @@ require'marks'.setup {
 }
 ```
 
-See `:help marks-setup` for all of the keys that can be passed to the setup function.
+### Builtin Marks
+The `builtin_marks` option allows you to track and show vim's builtin marks in the sign column. These marks will update automatically when the cursor moves.
+
+Supported builtin marks:
+- `"'"` - Last jump
+- `"^"` - Last insertion stop position
+- `"."` - Last change
+- `"<"` - Start of last visual selection
+- `">"` - End of last visual selection
+
+### Bookmarks
+Bookmarks are unnamed markers tied to a particular (buffer, line, col) triple. Unlike regular marks, bookmarks can have signs or virtual text annotations attached to them. They are useful for remembering positions across buffers without using uppercase marks.
+
+For example, you might set two bookmarks to quickly toggle back and forth between a function and its corresponding unit test in another file.
+
+markit.nvim supports up to 10 bookmark groups (0-9), each with its own optional sign text and virtual text annotations.
 
 ## Mappings
 
@@ -253,9 +272,9 @@ There are also corresponding commands for those who prefer the quickfix list:
 
 ## Todos
 
-- [ ] Operator pending mappings and count aware movement mappings
-- [ ] Bookmarks are not persistent across sessions
-- [ ] Telescope extension only lists one mark
+- [ ] Better telescope previews
+- [ ] Custom notes for bookmarks
+- [ ] Export bookmarks as markdown
 
 ## See Also
 
