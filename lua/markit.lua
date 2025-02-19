@@ -197,6 +197,74 @@ local function apply_mappings()
     end
 end
 
+local function setup_highlights()
+    vim.api.nvim_set_hl(0, 'MarkSignHL', { link = 'Identifier', default = true })
+    vim.api.nvim_set_hl(0, 'MarkSignLineHL', { link = 'NONE', default = true })
+    vim.api.nvim_set_hl(0, 'MarkSignNumHL', { link = 'CursorLineNr', default = true })
+    vim.api.nvim_set_hl(0, 'MarkVirtTextHL', { link = 'Comment', default = true })
+end
+
+-- Setup commands
+local function setup_commands()
+    -- Marks commands
+    vim.api.nvim_create_user_command('MarksToggleSigns', function(opts)
+        require('markit').toggle_signs(opts.args)
+    end, { nargs = '?' })
+
+    vim.api.nvim_create_user_command('MarksListBuf', function()
+        require('markit').mark_state:buffer_to_list()
+        vim.cmd('lopen')
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksListGlobal', function()
+        require('markit').mark_state:global_to_list()
+        vim.cmd('lopen')
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksListAll', function()
+        require('markit').mark_state:all_to_list()
+        vim.cmd('lopen')
+    end, {})
+
+    -- Marks quickfix commands
+    vim.api.nvim_create_user_command('MarksQFListBuf', function()
+        require('markit').mark_state:buffer_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksQFListGlobal', function()
+        require('markit').mark_state:global_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksQFListAll', function()
+        require('markit').mark_state:all_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+
+    -- Bookmarks commands
+    vim.api.nvim_create_user_command('BookmarksList', function(opts)
+        require('markit').bookmark_state:to_list('loclist', tonumber(opts.args))
+        vim.cmd('lopen')
+    end, { nargs = 1 })
+
+    vim.api.nvim_create_user_command('BookmarksListAll', function()
+        require('markit').bookmark_state:all_to_list()
+        vim.cmd('lopen')
+    end, {})
+
+    -- Bookmarks quickfix commands
+    vim.api.nvim_create_user_command('BookmarksQFList', function(opts)
+        require('markit').bookmark_state:to_list('quickfixlist', tonumber(opts.args))
+        vim.cmd('copen')
+    end, { nargs = 1 })
+
+    vim.api.nvim_create_user_command('BookmarksQFListAll', function()
+        require('markit').bookmark_state:all_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+end
+
 local function setup_mappings(config)
     if not config.default_mappings then
         M.mappings = {}
@@ -259,6 +327,8 @@ function M.setup(config)
 
     config.default_mappings = utils.option_nil(config.default_mappings, true)
     setup_mappings(config)
+    setup_highlights()
+    setup_commands()
     setup_autocommands()
 
     M.mark_state.opt.signs = utils.option_nil(config.signs, true)
