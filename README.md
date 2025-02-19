@@ -134,7 +134,7 @@ Set `default_mappings = false` in the setup function if you don't want to have t
 You can change the keybindings by setting the `mapping` table in the setup function:
 
 ```lua
-require'marks'.setup {
+require('markit').setup {
     mappings = {
         set = 'M',
         toggle_mark = 'm',
@@ -178,35 +178,32 @@ marks.nvim also provides a list of lua APIs for you, which can be used to setup 
 ```lua
     m = {
         name = icons.ui.Bookmark .. 'Marks',
-        b = { "<cmd>lua require('telescope').extensions.marks_nvim.bookmarks_list_all()<cr>", 'Bookmarks' },
-        d = { "<cmd>lua require('marks').delete_line()<cr>", 'Delete Line' },
-        D = { "<cmd>lua require('marks').delete_buf()<cr>", 'Delete Buffer' },
-        h = { "<cmd>lua require('marks').prev_bookmark()<cr>", 'Previous Bookmark' },
-        j = { "<cmd>lua require('marks').next()<cr>", 'Next' },
-        k = { "<cmd>lua require('marks').prev()<cr>", 'Previous' },
-        l = { "<cmd>lua require('marks').next_bookmark()<cr>", 'Next Bookmark' },
+        b = { "<cmd>lua require('telescope').extensions.markit.bookmarks_list_all()<cr>", 'Bookmarks' },
+        B = { "<cmd>lua require('telescope').extensions.markit.bookmarks_list_all({project_only = true})<cr>", 'Bookmarks In Project' },
+        d = { "<cmd>lua require('markit').delete_line()<cr>", 'Delete Marks In Line' },
+        D = { "<cmd>lua require('markit').delete_buf()<cr>", 'Delete Marks In Buffer' },
+        h = { "<cmd>lua require('markit').prev_bookmark()<cr>", 'Previous Bookmark' },
+        j = { "<cmd>lua require('markit').next()<cr>", 'Next' },
+        k = { "<cmd>lua require('markit').prev()<cr>", 'Previous' },
+        l = { "<cmd>lua require('markit').next_bookmark()<cr>", 'Next Bookmark' },
         m = { '<cmd>Telescope marks<cr>', 'All Marks' },
-        P = { "<cmd>lua require('marks').preview()<cr>", 'Preview' },
-        s = { "<cmd>lua require('marks').set_next()<cr>", 'Set Next' },
-        t = { "<cmd>lua require('marks').toggle()<cr>", 'Toggle' },
-        x = { "<cmd>lua require('marks').delete_bookmark()<cr>", 'Delete Bookmark' },
-        ['1'] = { "<cmd>lua require('marks').toggle_bookmark1()<cr>", 'Toggle Bookmark 0' },
-        ['2'] = { "<cmd>lua require('marks').toggle_bookmark2()<cr>", 'Toggle Bookmark 2' },
-        ['3'] = { "<cmd>lua require('marks').toggle_bookmark3()<cr>", 'Toggle Bookmark 3' },
-        ['4'] = { "<cmd>lua require('marks').toggle_bookmark4()<cr>", 'Toggle Bookmark 4' },
+        P = { "<cmd>lua require('markit').preview()<cr>", 'Preview' },
+        s = { "<cmd>lua require('markit').set_next()<cr>", 'Set Next' },
+        t = { "<cmd>lua require('markit').toggle()<cr>", 'Toggle' },
+        x = { "<cmd>lua require('markit').delete_bookmark()<cr>", 'Delete Bookmark' },
+        -- These bindings can go from 1 till 9
+        ['1'] = { "<cmd>lua require('markit').toggle_bookmark1()<cr>", 'Toggle Group 1 Bookmark' },
+        g = {
+            ['1'] = { '<cmd>lua require("telescope").extensions.markit.bookmarks_list_all({group = 1})<cr>', 'Group 1 Bookmarks' }
+        }
+        G = {
+            ['1'] = { '<cmd>lua require("telescope").extensions.markit.bookmarks_list_all({group = 1, project_only = true})<cr>', 'Group 1 Bookmarks In Project' }
+        }
         n = {
-            name = 'Next Bookmark Group',
-            ['1'] = { "<cmd>lua require('marks').next_bookmark1()<cr>", 'Next Bookmark 1' },
-            ['2'] = { "<cmd>lua require('marks').next_bookmark2()<cr>", 'Next Bookmark 2' },
-            ['3'] = { "<cmd>lua require('marks').next_bookmark3()<cr>", 'Next Bookmark 3' },
-            ['4'] = { "<cmd>lua require('marks').next_bookmark4()<cr>", 'Next Bookmark 4' },
+            ['1'] = { "<cmd>lua require('markit').next_bookmark1()<cr>", 'Next Group 1 Bookmark' },
         },
         p = {
-            name = 'Previous Bookmark Group',
-            ['1'] = { "<cmd>lua require('marks').prev_bookmark1()<cr>", 'Previous Bookmark 1' },
-            ['2'] = { "<cmd>lua require('marks').prev_bookmark2()<cr>", 'Previous Bookmark 2' },
-            ['3'] = { "<cmd>lua require('marks').prev_bookmark3()<cr>", 'Previous Bookmark 3' },
-            ['4'] = { "<cmd>lua require('marks').prev_bookmark4()<cr>", 'Previous Bookmark 4' },
+            ['1'] = { "<cmd>lua require('markit').prev_bookmark1()<cr>", 'Previous Group 1 Bookmark' },
         },
     },
 ```
