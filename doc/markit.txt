@@ -49,7 +49,7 @@ With lazy.nvim
 CONFIGURATION ~
 
 >lua
-    require'marks'.setup {
+    require('markit').setup {
       -- whether to map keybinds or not. default true
       default_mappings = true,
       -- which builtin marks to show. default {}
@@ -58,7 +58,7 @@ CONFIGURATION ~
       cyclic = true,
       -- whether the shada file is updated after modifying uppercase marks. default false
       force_write_shada = false,
-      -- how often (in ms) to redraw signs/recompute mark positions. 
+      -- how often (in ms) to redraw signs/recompute mark positions.
       -- higher value means better performance but may cause visual lag,
       -- while lower value may cause performance penalties. default 150.
       refresh_interval = 150,
@@ -91,15 +91,132 @@ CONFIGURATION ~
 USAGE                                                           *markit-usage*
 
 
+MAPPINGS ~
+
+The following default mappings are included:
+
+>
+        mx              Set mark x
+        m,              Set the next available alphabetical (lowercase) mark
+        m;              Toggle the next available mark at the current line
+        dmx             Delete mark x
+        dm-             Delete all marks on the current line
+        dm<space>       Delete all marks in the current buffer
+        m]              Move to next mark
+        m[              Move to previous mark
+        m:              Preview mark. This will prompt you for a specific mark to
+                        preview; press <cr> to preview the next mark.
+        Mx              Toggle mark x
+        m[0-9]          Add a bookmark from bookmark group[0-9].
+        dm[0-9]         Delete all bookmarks from bookmark group[0-9].
+        m}              Move to the next bookmark having the same type as the bookmark under
+                        the cursor. Works across buffers.
+        m{              Move to the previous bookmark having the same type as the bookmark under
+                        the cursor. Works across buffers.
+        dm=             Delete the bookmark under the cursor.
+<
+
+Set `default_mappings = false` in the setup function if you don’t want to
+have these mapped.
+
+You can change the keybindings by setting the `mapping` table in the setup
+function:
+
+>lua
+    require'marks'.setup {
+        mappings = {
+            set = 'M',
+            toggle_mark = 'm',
+            set_next = false -- pass false to disable only this default mapping
+        },
+    }
+<
+
+The following keys are available to be passed to the mapping table:
+
+>
+      set_next               Set next available lowercase mark at cursor.
+      toggle                 Toggle next available mark at cursor.
+      toggle_mark            Toggle a mark at the current line.
+      delete_line            Deletes all marks on current line.
+      delete_buf             Deletes all marks in current buffer.
+      next                   Goes to next mark in buffer.
+      prev                   Goes to previous mark in buffer.
+      preview                Previews mark (will wait for user input). press <cr> to just preview the next mark.
+      set                    Sets a letter mark (will wait for input).
+      delete                 Delete a letter mark (will wait for input).
+      set_bookmark[0-9]      Sets a bookmark from group[0-9].
+      delete_bookmark[0-9]   Deletes all bookmarks from group[0-9].
+      delete_bookmark        Deletes the bookmark under the cursor.
+      next_bookmark          Moves to the next bookmark having the same type as the
+                             bookmark under the cursor.
+      prev_bookmark          Moves to the previous bookmark having the same type as the
+                             bookmark under the cursor.
+      next_bookmark[0-9]     Moves to the next bookmark of the same group type. Works by
+                             first going according to line number, and then according to buffer
+                             number.
+      prev_bookmark[0-9]     Moves to the previous bookmark of the same group type. Works by
+                             first going according to line number, and then according to buffer
+                             number.
+      annotate               Prompts the user for a virtual line annotation that is then placed
+                             above the bookmark. Requires neovim 0.6+ and is not mapped by default.
+<
+
+marks.nvim also provides a list of lua APIs for you, which can be used to setup
+mappings, here’s what my config with which key looks like:
+
+>lua
+        m = {
+            name = icons.ui.Bookmark .. 'Marks',
+            b = { "<cmd>lua require('telescope').extensions.marks_nvim.bookmarks_list_all()<cr>", 'Bookmarks' },
+            d = { "<cmd>lua require('marks').delete_line()<cr>", 'Delete Line' },
+            D = { "<cmd>lua require('marks').delete_buf()<cr>", 'Delete Buffer' },
+            h = { "<cmd>lua require('marks').prev_bookmark()<cr>", 'Previous Bookmark' },
+            j = { "<cmd>lua require('marks').next()<cr>", 'Next' },
+            k = { "<cmd>lua require('marks').prev()<cr>", 'Previous' },
+            l = { "<cmd>lua require('marks').next_bookmark()<cr>", 'Next Bookmark' },
+            m = { '<cmd>Telescope marks<cr>', 'All Marks' },
+            P = { "<cmd>lua require('marks').preview()<cr>", 'Preview' },
+            s = { "<cmd>lua require('marks').set_next()<cr>", 'Set Next' },
+            t = { "<cmd>lua require('marks').toggle()<cr>", 'Toggle' },
+            x = { "<cmd>lua require('marks').delete_bookmark()<cr>", 'Delete Bookmark' },
+            ['1'] = { "<cmd>lua require('marks').toggle_bookmark1()<cr>", 'Toggle Bookmark 0' },
+            ['2'] = { "<cmd>lua require('marks').toggle_bookmark2()<cr>", 'Toggle Bookmark 2' },
+            ['3'] = { "<cmd>lua require('marks').toggle_bookmark3()<cr>", 'Toggle Bookmark 3' },
+            ['4'] = { "<cmd>lua require('marks').toggle_bookmark4()<cr>", 'Toggle Bookmark 4' },
+            n = {
+                name = 'Next Bookmark Group',
+                ['1'] = { "<cmd>lua require('marks').next_bookmark1()<cr>", 'Next Bookmark 1' },
+                ['2'] = { "<cmd>lua require('marks').next_bookmark2()<cr>", 'Next Bookmark 2' },
+                ['3'] = { "<cmd>lua require('marks').next_bookmark3()<cr>", 'Next Bookmark 3' },
+                ['4'] = { "<cmd>lua require('marks').next_bookmark4()<cr>", 'Next Bookmark 4' },
+            },
+            p = {
+                name = 'Previous Bookmark Group',
+                ['1'] = { "<cmd>lua require('marks').prev_bookmark1()<cr>", 'Previous Bookmark 1' },
+                ['2'] = { "<cmd>lua require('marks').prev_bookmark2()<cr>", 'Previous Bookmark 2' },
+                ['3'] = { "<cmd>lua require('marks').prev_bookmark3()<cr>", 'Previous Bookmark 3' },
+                ['4'] = { "<cmd>lua require('marks').prev_bookmark4()<cr>", 'Previous Bookmark 4' },
+            },
+        },
+<
+
+See `:help markit` for more information.
+
+
 BUILTIN MARKS ~
 
 The `builtin_marks` option allows you to track and show vim’s builtin marks
 in the sign column. These marks will update automatically when the cursor
 moves.
 
-Supported builtin marks: - `"'"` - Last jump - `"^"` - Last insertion stop
-position - `"."` - Last change - `"<"` - Start of last visual selection - `">"`
-- End of last visual selection
+Supported builtin marks:
+
+- `"'"` - Last jump
+- `"^"` - Last insertion stop position
+- `"."` - Last change
+- `"<"` - Start of last visual selection
+- `">"` - End of last visual selection
 
 
 BOOKMARKS ~
@@ -159,17 +276,17 @@ There’s a telescope extension allowing to list marks through telescope.
 To activate it you need to load the extension:
 
 >lua
-    telescope.load_extension("marks_nvim")
+    telescope.load_extension("markit")
 <
 
 You can then use the extension methods to list marks instead of using the
 native loclist system:
 
 >lua
-    require('telescope').extensions.marks_nvim.marks_list_buf(opts) -- List buffer marks
-    require('telescope').extensions.marks_nvim.marks_list_all(opts) -- List all marks
-    require('telescope').extensions.marks_nvim.bookmarks_list_group(1, opts) -- List a bookmark group marks
-    require('telescope').extensions.marks_nvim.bookmarks_list_all(opts) -- List all bookmarks marks
+    require('telescope').extensions.markit.marks_list_buf(opts) -- List buffer marks
+    require('telescope').extensions.markit.marks_list_all(opts) -- List all marks
+    require('telescope').extensions.markit.bookmarks_list_group(1, opts) -- List a bookmark group marks
+    require('telescope').extensions.markit.bookmarks_list_all(opts) -- List all bookmarks marks
 <
 
 
@@ -181,6 +298,7 @@ TO-DO ~
 - Better telescope previews
 - Custom notes for bookmarks
 - Export bookmarks as markdown
+- Add user commands, fix existing ones
 
 
 BEHIND THE CODE                                       *markit-behind-the-code*
