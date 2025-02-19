@@ -234,34 +234,34 @@ markit.nvim supports up to 10 bookmark groups (0-9), each with its own optional 
 
 markit.nvim defines the following commands:
 
-`:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional buffer number to toggle signs for that buffer only.
+- `:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional buffer number to toggle signs for that buffer only.
 
-`:MarksListBuf` Fill the location list with all marks in the current buffer.
+- `:MarksListBuf` Fill the location list with all marks in the current buffer.
 
-`:MarksListGlobal` Fill the location list with all global marks in open buffers.
+- `:MarksListGlobal` Fill the location list with all global marks in open buffers.
 
-`:MarksListAll` Fill the location list with all marks in all open buffers.
+- `:MarksListAll` Fill the location list with all marks in all open buffers.
 
-`:BookmarksList group_number` Fill the location list with all bookmarks of group "group_number".
+- `:BookmarksList group_number` Fill the location list with all bookmarks of group "group_number".
 
-`:BookmarksListAll` Fill the location list with all bookmarks, across all groups.
+- `:BookmarksListAll` Fill the location list with all bookmarks, across all groups.
 
 There are also corresponding commands for those who prefer the quickfix list:
 
-`:MarksQFListBuf`
-`:MarksQFListGlobal`
-`:MarksQFListAll`
-`:BookmarksQFList group_number`
-`:BookmarksQFListAll`
+- `:MarksQFListBuf`
+- `:MarksQFListGlobal`
+- `:MarksQFListAll`
+- `:BookmarksQFList group_number`
+- `:BookmarksQFListAll`
 
 ### Highlights
 
 markit.nvim defines the following highlight groups:
 
-`MarkSignHL` The highlight group for displayed mark signs.
-`MarkSignNumHL` The highlight group for the number line in a signcolumn.
-`MarkSignLineHL` The highlight group for the whole line the sign is placed in.
-`MarkVirtTextHL` The highlight group for bookmark virtual text annotations.
+- `MarkSignHL` The highlight group for displayed mark signs.
+- `MarkSignNumHL` The highlight group for the number line in a signcolumn.
+- `MarkSignLineHL` The highlight group for the whole line the sign is placed in.
+- `MarkVirtTextHL` The highlight group for bookmark virtual text annotations.
 
 ### Telescope Integration
 
@@ -276,10 +276,12 @@ telescope.load_extension("markit")
 You can then use the extension methods to list marks instead of using the native loclist system:
 
 ```lua
-require('telescope').extensions.markit.marks_list_buf(opts) -- List buffer marks
-require('telescope').extensions.markit.marks_list_all(opts) -- List all marks
-require('telescope').extensions.markit.bookmarks_list_group(1, opts) -- List a bookmark group marks
-require('telescope').extensions.markit.bookmarks_list_all(opts) -- List all bookmarks marks
+require('telescope').extensions.markit.marks_list_buf() -- List buffer marks
+require('telescope').extensions.markit.marks_list_all() -- List all marks
+require('telescope').extensions.markit.bookmarks_list_all() -- List all bookmarks marks
+require('telescope').extensions.markit.bookmarks_list_all({project_only = true}) -- List all bookmarks in current project
+require('telescope').extensions.markit.bookmarks_list_all({group = 1}) -- List all group 1 bookmarks
+require('telescope').extensions.markit.bookmarks_list_all({group = 1, project_only = true}) -- List all group 1 bookmarks in current project
 ```
 
 ## 🏗️ What's Next
