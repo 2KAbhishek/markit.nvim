@@ -64,7 +64,7 @@ With lazy.nvim
 ### 🛠️ Configuration
 
 ```lua
-require'marks'.setup {
+require('markit').setup {
   -- whether to map keybinds or not. default true
   default_mappings = true,
   -- which builtin marks to show. default {}
@@ -161,7 +161,7 @@ There's a telescope extension allowing to list marks through telescope.
 To activate it you need to load the extension:
 
 ```lua
-telescope.load_extension("marks_nvim")
+telescope.load_extension("markit")
 ```
 
 You can then use the extension methods to list marks instead of using the native loclist system:

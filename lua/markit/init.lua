@@ -1,6 +1,6 @@
-local mark = require('marks.mark')
-local bookmark = require('marks.bookmark')
-local utils = require('marks.utils')
+local mark = require('markit.mark')
+local bookmark = require('markit.bookmark')
+local utils = require('markit.utils')
 local M = {}
 
 function M.set()
@@ -193,7 +193,7 @@ end
 
 local function apply_mappings()
     for cmd, key in pairs(M.mappings) do
-        vim.api.nvim_set_keymap('n', key, '', { callback = M[cmd], desc = 'marks: ' .. cmd:gsub('_', ' ') })
+        vim.api.nvim_set_keymap('n', key, '', { callback = M[cmd], desc = 'markit: ' .. cmd:gsub('_', ' ') })
     end
 end
 
@@ -210,11 +210,11 @@ end
 local function setup_autocommands()
     vim.cmd([[augroup Marks_autocmds
     autocmd!
-    autocmd BufEnter * lua require'marks'.refresh(true)
-    autocmd CursorHold * lua require'marks'.refresh()
-    autocmd BufDelete * lua require'marks'._on_delete()
-    autocmd VimLeavePre * lua require'marks'.bookmark_state:save()
-    autocmd DirChanged * lua require'marks'.bookmark_state:load()
+    autocmd BufEnter * lua require'markit'.refresh(true)
+    autocmd CursorHold * lua require'markit'.refresh()
+    autocmd BufDelete * lua require'markit'._on_delete()
+    autocmd VimLeavePre * lua require'markit'.bookmark_state:save()
+    autocmd DirChanged * lua require'markit'.bookmark_state:load()
   augroup end]])
 end
 

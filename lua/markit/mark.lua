@@ -1,5 +1,5 @@
 local a = vim.api
-local utils = require('marks.utils')
+local utils = require('markit.utils')
 
 local Mark = {}
 
