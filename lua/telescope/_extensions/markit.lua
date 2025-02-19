@@ -4,7 +4,7 @@ local finders = require('telescope.finders')
 local entry_display = require('telescope.pickers.entry_display')
 local telescope_utils = require('telescope.utils')
 local conf = require('telescope.config').values
-local marks = require('marks')
+local markit = require('markit')
 
 -- Display helpers
 local function create_displayer(is_bookmark)
@@ -50,14 +50,14 @@ local function list_items(opts)
     local is_bookmark = opts.group ~= nil or opts.bookmarks
 
     if is_bookmark then
-        results = marks.bookmark_state:get_list(opts)
+        results = markit.bookmark_state:get_list(opts)
         if opts.group then
             title = string.format('Bookmark %s%s', opts.group, opts.project_only and ' (Project)' or ' (All)')
         else
             title = 'All Bookmarks' .. (opts.project_only and ' (Project)' or ' (All)')
         end
     else
-        results = opts.buffer_only and marks.mark_state:get_buf_list() or marks.mark_state:get_all_list()
+        results = opts.buffer_only and markit.mark_state:get_buf_list() or markit.mark_state:get_all_list()
         title = opts.buffer_only and 'Buffer Marks' or 'All Marks'
     end
 
