@@ -1,4 +1,4 @@
-local markit = require('marks')
+local markit = require('markit')
 
 describe('markit', function()
     it('passes test', function()
