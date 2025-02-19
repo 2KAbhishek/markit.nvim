@@ -292,6 +292,7 @@ require('telescope').extensions.markit.bookmarks_list_all(opts) -- List all book
 - [ ] Better telescope previews
 - [ ] Custom notes for bookmarks
 - [ ] Export bookmarks as markdown
+- [ ] Add user commands, fix existing ones
 
 ## ⛅ Behind The Code
 
