@@ -1,372 +1,208 @@
-==============================================================================
-                                                                  *marks-nvim*
-A plugin for viewing, interacting with, and manipulating built in vim marks
-
-Author: Tony Chen <tchen1998 [at] gmail.com>
-
-View marks in the sign column, quickly add, delete, and toggle marks, cycle
-between marks, preview marks in floating windows, and much more.
+*markit.txt*         For Neovim >= 0.8.0         Last change: 2025 February 19
 
 ==============================================================================
-CONTENTS                                            *marks.nvim*
+Table of Contents                                   *markit-table-of-contents*
 
-    1. Introduction .................... |marks-introduction|
-    2. Setup ........................... |marks-setup|
-    3. Bookmarks ....................... |marks-bookmarks|
-    3. Mappings ........................ |marks-mappings|
-    4. Highlights/Commands ............. |marks-cmds|
-    5. Contributing .................... |marks-contrib|
-    6. License ......................... |marks-license|
+  - Features                                                 |markit-features|
+  - Setup                                                       |markit-setup|
+  - Usage                                                       |markit-usage|
+  - What’s Next                                       |markit-what’s-next|
+  - Behind The Code                                   |markit-behind-the-code|
 
-==============================================================================
-1. Introduction                                            *marks-introduction*
+markit.nvim enhances marks experience in neovim, making it easier to navigate
+and manage marks across projects.
 
-This plugin enhances vim's built in marks functionality. Among other things,
-it allows you to:
 
-  view marks in the sign column
-  quikcly add, delete, and toggle marks
-  cycle between marks
-  preview marks in floating windows
-  extract marks to quickfix/location list
-  place bookmarks with sign/virtual text annotations
+FEATURES                                                     *markit-features*
 
-This plugin requires neovim 0.5 or higher. Since this plugin is mainly written
-in lua, it will not work with vim.
+- View marks in the sign column
+- Add, delete, and toggle marks
+- Cycle between marks
+- Preview marks in floating windows
+- Extract marks to quickfix/location list
+- Set bookmarks with sign/virtual text annotations
+- Quick navigation across buffers
+- Telescope integration for marks and bookmarks
 
-==============================================================================
-2. Setup                                                        *marks-setup*
 
-Setup is done through lua. To initialize the plugin with all of its defaults,
-put the following in your init.vim:
+SETUP                                                           *markit-setup*
 
-  Example: >
 
-      require'marks'.setup {
-        default_mappings = true,
-        signs = true,
-        mappings = {}
-      }
+REQUIREMENTS ~
+
+- Neovim >= 0.6.0
+
+
+INSTALLATION ~
+
+With lazy.nvim
+
+>lua
+    {
+        '2kabhishek/markit.nvim',
+        config = load_config('tools.marks'),
+        event = { 'BufReadPre', 'BufNewFile' },
+    },
 <
-The setup function takes in a table of keys that control the behavior of this
-plugin. The following options are defined:
 
-                                                               *marks-builtin*
-  builtin_marks: table
-    (default {})
 
-    Which builtin marks to track and show. If set, these marks will also show
-    up in the signcolumn and will update on |CursorMoved|
+CONFIGURATION ~
 
-    Supported values:
-      "'"
-      "^"
-      "."
-      "<"
-      ">"
-
-    Example: >
-
-      require'marks'.setup {
-        builtin_marks = { "'", "<", ">", "." }
-      }
-<
-                                                      *marks-default_mappings*
-  default_mappings: bool
-    (default true)
-
-    Whether to use the default plugin mappings or not. See |marks-mappings| for more
-
-                                                                 *marks-signs*
-  signs: bool
-    (default true)
-
-    Whether to show marks in the signcolumn or not. If set to true, its
-    recommended to also set |signcolumn| to "auto", for cases where multiple
-    marks are placed on the same line.
-
-                                                                *marks-cyclic*
-  cyclic: bool
-    (default true)
-
-    Whether forward/backwards movement should cycle back to the beginning/end
-    of buffer.
-
-                                                     *marks-force_write_shada*
-  force_write_shada: bool
-    (default false)
-
-    If true, then deleting global (uppercase) marks will also update the
-    |shada| file accordingly and force deletion of the mark permanently.
-    This option can be destructive and should be set only after reading more
-    about the shada file.
-
-                                                      *marks-refresh_interval*
-  refresh_interval: integer
-    (default 150)
-
-    How often (in ms) marks.nvim should update the marks list and recompute
-    mark positions/redraw signs. Lower values means that mark positions and
-    signs will refresh much quicker, but may incur a higher performance
-    penalty, whereas higher values may result in better performance, but may
-    also cause noticable lag in signs updating.
-
-                                                         *marks-sign_priority*
-  sign_priority: integer | table
-    (default 10)
-
-    The sign priority to be used for marks. Can either be a number, in which
-    case the priority applies to all types of marks, or a table with some or
-    all of the following keys:
-
-      lower: sign priority for lowercase marks
-      upper: sign priority for uppercase marks
-      builtin: sign priority for builtin marks
-      bookmark: sign priority for bookmarks
-
-  excluded_filetypes: table                         *marks-excluded_filetypes*
-    (default {})
-
-    Which filetypes to ignore. If a buffer with this filetype is opened, then
-    marks.nvim will not track any marks set in this buffer, and will not
-    display any signs. Setting and moving to marks with ` or ' will still work, but
-    movement commands like "m]" or "m[" will not.
-
-  excluded_buftypes: table                         *marks-excluded_buftypes*
-    (default {})
-
-    Which buftypes to ignore. If a buffer with this buftype is opened, then
-    marks.nvim will not track any marks set in this buffer, and will not
-    display any signs. Setting and moving to marks with ` or ' will still work, but
-    movement commands like "m]" or "m[" will not.
-
-  bookmark_[0-9]: table                              *marks-bookmark_config*
-    (default {})
-
-    Configuration table for each bookmark group (see |marks-bookmarks|).
-    The table has the following keys:
-
-      sign: the character to use in the signcolumn for this bookmark group.
-        defaults to "!@#$%^&*()" - in order from group 1 to 0. set to false to
-        turn off signs for this bookmark.
-      virt_text: virtual text annotations to place at the eol of a bookmark.
-        defaults to nil, meaning no virtual text.
-      annotate: when true, explicitly prompts the user for an annotation that
-        will be displayed above the bookmark. defaults to false.
-
-==============================================================================
-2. Bookmarks                                                *marks-bookmarks*
-
-marks.nvim also introduces the idea of a "bookmark" - a unnamed marker that is
-tied to a particular (buffer, line, col) triple. Bookmarks can optionally have
-signs or virtual text annotations attached to them, and can be useful for
-remembering positions in a particular buffer without having to set an
-uppercase mark. For example, you might set two bookmarks to quickly toggle
-back and forth between a function and its corresponding unit test in another file.
-
-marks.nvim supports up to 10 bookmark groups, each of which optionally has its
-own sign text and virtual text. marks.nvim provides functionality to set,
-delete, and cycle between bookmarks of a particular group - see
-|marks-mappings| for more information.
-
-==============================================================================
-2. Mappings                                                   *marks-mappings*
-
-The following mappings are defined by default:
-
-    mx              Set mark x
-    m,              Set the next available alphabetical (lowercase) mark
-    m;              Toggle the next available mark at the current line
-    dmx             Delete mark x
-    dm-             Delete all marks on the current line
-    dm<space>       Delete all marks in the current buffer
-    m]              Move to next mark
-    m[              Move to previous mark
-    m:              Preview mark. This will prompt you for a specific mark to
-                    preview; press <cr> to preview the next mark.
-    Mx              Toggle mark at the current line
-    m[0-9]          Add a bookmark from bookmark group[0-9].
-    dm[0-9]         Delete all bookmarks from bookmark group[0-9].
-    m}              Move to the next bookmark having the same type as the bookmark under
-                    the cursor. Works across buffers.
-    m{              Move to the previous bookmark having the same type as the bookmark under
-                    the cursor. Works across buffers.
-    dm=             Delete the bookmark under the cursor.
-
-Mappings can be controlled via the `setup` function, by passing in a mappings
-table, with commands as keys, and the desired mappings as values.
-
-The following are the available keys of the mapping table (see above as well):
-
-  set_next               Set the next available alphabetical mark
-  set                    Set a named mark (will wait for input).
-  toggle                 Toggle a mark at the cursor.
-  toggle_mark            Toggle a mark at the current line.
-  next                   Move to the next mark
-  prev                   Move to the previous mark.
-  delete                 Delete a mark (will wait for input).
-  delete_line            Delete the marks on the current line.
-  delete_buf             Delete all marks in the buffer.
-  preview                Preview a mark.
-
-  set_bookmark[0-9]      Sets a bookmark from group[0-9].
-  delete_bookmark[0-9]   Deletes all bookmarks from group[0-9].
-  toggle_bookmark[0-9]   Toggles a bookmark from group[0-9].
-  delete_bookmark        Deletes the bookmark under the cursor.
-  next_bookmark          Moves to the next bookmark having the same type as the
-                         bookmark under the cursor.
-  prev_bookmark          Moves to the previous bookmark having the same type as the
-                         bookmark under the cursor.
-  next_bookmark[0-9]     Moves to the next bookmark of of the same group type. Works by
-                         first going according to line number, and then according to buffer
-                         number.
-  prev_bookmark[0-9]     Moves to the previous bookmark of of the same group type. Works by
-                         first going according to line number, and then according to buffer
-                         number.
-  annotate               Prompts the user for a virtual line annotation that is then placed
-                         above the bookmark. Requires neovim 0.6+ and is not mapped by default.
-
-  Example: >
-
+>lua
     require'marks'.setup {
-      mappings = {
-        set = "n",
-        delete = "dn"
-      }
+      -- whether to map keybinds or not. default true
+      default_mappings = true,
+      -- which builtin marks to show. default {}
+      builtin_marks = { ".", "<", ">", "^" },
+      -- whether movements cycle back to the beginning/end of buffer. default true
+      cyclic = true,
+      -- whether the shada file is updated after modifying uppercase marks. default false
+      force_write_shada = false,
+      -- how often (in ms) to redraw signs/recompute mark positions. 
+      -- higher value means better performance but may cause visual lag,
+      -- while lower value may cause performance penalties. default 150.
+      refresh_interval = 150,
+      -- sign priorities for each type of mark - builtin marks, uppercase marks, lowercase
+      -- marks, and bookmarks.
+      -- can be either a table with all/none of the keys, or a single number, in which case
+      -- the priority applies to all marks.
+      -- default 10.
+      sign_priority = { lower=10, upper=15, builtin=8, bookmark=20 },
+      -- disables mark tracking for specific filetypes. default {}
+      excluded_filetypes = {},
+      -- disables mark tracking for specific buftypes. default {}
+      excluded_buftypes = {},
+      -- marks.nvim allows you to configure up to 10 bookmark groups, each with its own
+      -- sign/virttext. Bookmarks can be used to group together positions and quickly move
+      -- across multiple buffers. default sign is '!@#$%^&*()' (from 0 to 9), and
+      -- default virt_text is "".
+      bookmark_0 = {
+        sign = "⚑",
+        virt_text = "hello world",
+        -- explicitly prompt for a virtual line annotation when setting a bookmark from this group.
+        -- defaults to false.
+        annotate = false,
+      },
+      mappings = {}
     }
 <
 
-  means that setting mark "a" is done by pressing "na", and deleting mark "a"
-  is done by pressing "dna".
 
-  Example: >
+USAGE                                                           *markit-usage*
 
-    require'marks'.setup {
-      mappings = {
-        set_next = "m."
-      }
-    }
-<
-  means that setting a mark on the current cursor is done by pressing "m."
 
-  Mappings can be disabled by setting them to false:
+BUILTIN MARKS ~
 
-  Example: >
-    require'marks'.setup {
-      mappings = {
-        next = false,
-      }
-    }
-<
-  disables the default mappings of "m]" for next.
+The `builtin_marks` option allows you to track and show vim’s builtin marks
+in the sign column. These marks will update automatically when the cursor
+moves.
 
-Alternatively, <Plug> mappings are provided by marks.nvim, allowing you
-to map keybindings outside of the `setup` function.
+Supported builtin marks: - `"'"` - Last jump - `"^"` - Last insertion stop
+position - `"."` - Last change - `"<"` - Start of last visual selection - `">"`
+- End of last visual selection
 
-The following <Plug> mappings are provided (see above for more details
-on the functionality of each mapping):
 
-    <Plug>(Marks-set)
-    <Plug>(Marks-setnext)
-    <Plug>(Marks-toggle)
-    <Plug>(Marks-delete)
-    <Plug>(Marks-deleteline)
-    <Plug>(Marks-deletebuf)
-    <Plug>(Marks-preview)
-    <Plug>(Marks-next)
-    <Plug>(Marks-prev)
-    <Plug>(Marks-delete-bookmark)
-    <Plug>(Marks-next-bookmark)
-    <Plug>(Marks-prev-bookmark)
-    <Plug>(Marks-set-bookmark[0-9])
-    <Plug>(Marks-delete-bookmark[0-9])
-    <Plug>(Marks-toggle-bookmark[0-9])
-    <Plug>(Marks-next-bookmark[0-9])
-    <Plug>(Marks-prev-bookmark[0-9])
+BOOKMARKS ~
 
-  Example:
+Bookmarks are unnamed markers tied to a particular (buffer, line, col) triple.
+Unlike regular marks, bookmarks can have signs or virtual text annotations
+attached to them. They are useful for remembering positions across buffers
+without using uppercase marks.
 
-    `nmap n <Plug>(Marks-set)`
+For example, you might set two bookmarks to quickly toggle back and forth
+between a function and its corresponding unit test in another file.
 
-  Means that setting mark "a" is done with "na".
+markit.nvim supports up to 10 bookmark groups (0-9), each with its own optional
+sign text and virtual text annotations.
 
-==============================================================================
-4. Highlights and Commands                                       *marks-cmds*
 
-marks.nvim defines the following highlight groups. For more information,
-see |sign_define()|.
+COMMANDS ~
 
-*MarkSignHL*
-  (defaults to |Identifier|)
+markit.nvim defines the following commands:
 
-  The highlight group for displayed mark signs.
+`:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional
+buffer number to toggle signs for that buffer only.
 
-*MarkSignNumHL*
-  (defaults to |LineNr|)
+`:MarksListBuf` Fill the location list with all marks in the current buffer.
 
-  The highlight group for the number line in a signcolumn: see
-  |sign_define()|.
+`:MarksListGlobal` Fill the location list with all global marks in open
+buffers.
 
-*MarkSignLineHL*
-  (defaults to |NONE|)
+`:MarksListAll` Fill the location list with all marks in all open buffers.
 
-  The highlight group for the whole line the sign is placed in.
+`:BookmarksList group_number` Fill the location list with all bookmarks of
+group "group_number".
 
-*MarkVirtTextHL*
-  (defaults to |Comment|)
-
-  The highlight group for bookmark virtual text annotations.
-
-marks.nvim also defines the following commands:
-
-*:MarksToggleSigns* [ buffer]
-
-Toggle signs for marks and bookmarks. By default, globally toggles signs, but
-also Accepts an optional buffer number argument to toggle signs for that
-buffer only.
-
-*:MarksListBuf*
-
-Fill the location list with all marks in the current buffer.
-
-*:MarksListGlobal*
-
-Fill the location list with all global marks in open buffers.
-
-*:MarksListAll*
-
-Fill the location list with all marks in all open buffers.
-
-*:BookmarksList* group_number
-
-Fill the location list with all bookmarks of group "group_number".
-
-*:BookmarksListAll*
-
-Fill the location list with all bookmarks, across all groups.
+`:BookmarksListAll` Fill the location list with all bookmarks, across all
+groups.
 
 There are also corresponding commands for those who prefer the quickfix list:
 
-*:MarksQFListBuf*
-
-*:MarksQFListGlobal*
-
-*:MarksQFListAll*
-
-*:BookmarksQFList* group_number
-
-*:BookmarksQFListAll*
-
-==============================================================================
-5. Contributing                                             *marks-contrib*
-
-If you would like to contribute a PR or issue, please do so at
-https://github.com/chentau/marks.nvim
+`:MarksQFListBuf` `:MarksQFListGlobal` `:MarksQFListAll` `:BookmarksQFList
+group_number` `:BookmarksQFListAll`
 
 
-==============================================================================
-6. License                                                   *marks-license*
+HIGHLIGHTS ~
 
-MIT License
+markit.nvim defines the following highlight groups:
 
-vim:tw=78:ts=2:et:sts=2:sw=2:ft=help
+`MarkSignHL` The highlight group for displayed mark signs. `MarkSignNumHL` The
+highlight group for the number line in a signcolumn. `MarkSignLineHL` The
+highlight group for the whole line the sign is placed in. `MarkVirtTextHL` The
+highlight group for bookmark virtual text annotations.
+
+
+TELESCOPE INTEGRATION ~
+
+There’s a telescope extension allowing to list marks through telescope.
+
+To activate it you need to load the extension:
+
+>lua
+    telescope.load_extension("marks_nvim")
+<
+
+You can then use the extension methods to list marks instead of using the
+native loclist system:
+
+>lua
+    require('telescope').extensions.marks_nvim.marks_list_buf(opts) -- List buffer marks
+    require('telescope').extensions.marks_nvim.marks_list_all(opts) -- List all marks
+    require('telescope').extensions.marks_nvim.bookmarks_list_group(1, opts) -- List a bookmark group marks
+    require('telescope').extensions.marks_nvim.bookmarks_list_all(opts) -- List all bookmarks marks
+<
+
+
+WHAT’S NEXT                                           *markit-what’s-next*
+
+
+TO-DO ~
+
+- Better telescope previews
+- Custom notes for bookmarks
+- Export bookmarks as markdown
+
+
+BEHIND THE CODE                                       *markit-behind-the-code*
+
+
+INSPIRATION ~
+
+This is a fork of marks.nvim <https://github.com/chentoast/marks.nvim> with
+some fixes and improvements from the community.
+
+
+TOOLING ~
+
+- dots2k <https://github.com/2kabhishek/dots2k> — Dev Environment
+- nvim2k <https://github.com/2kabhishek/nvim2k> — Personalized Editor
+
+
+MORE INFO ~
+
+- marks.nvim <https://github.com/chentoast/marks.nvim> Inspiration and base for this project
+
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:
