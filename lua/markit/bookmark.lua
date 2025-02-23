@@ -358,7 +358,7 @@ function Bookmarks:navigate(group_nr, next_mode)
     end
 
     -- Get all marks for this group from all bookmark files
-    local items = self:get_group_list(group_nr)
+    local items = self:get_list({ group = group_nr })
     local target_mark = find_mark(items, bufnr, pos, next_mode)
 
     if not target_mark then
@@ -475,74 +475,26 @@ local function read_bookmark_file(file)
     return ok and data or nil
 end
 
-local function get_line_content(bufnr, line)
-    if vim.fn.filereadable(bufnr) == 1 then
-        vim.fn.bufload(bufnr)
-        local lines = vim.api.nvim_buf_get_lines(bufnr, line - 1, line, false)
-        return #lines > 0 and lines[1] or ''
-    end
-    return ''
-end
-
 -- Helper function to process marks from a group
 local function process_group_marks(group_data, group_nr)
     local items = {}
     for filepath, marks in pairs(group_data.marks) do
-        local bufnr = vim.fn.bufadd(filepath)
-        for _, mark in ipairs(marks) do
-            local line_content = get_line_content(bufnr, mark.line)
-            table.insert(items, {
-                group = group_data.sign or tostring(group_nr),
-                path = filepath,
-                lnum = mark.line,
-                col = mark.col,
-                line = line_content,
-            })
-        end
-    end
-    return items
-end
-
-function Bookmarks:get_group_list(group_nr)
-    local items = {}
-    if not group_nr then
-        return items
-    end
-
-    -- Get all bookmark files from the bookmarks directory
-    local bookmarks_dir = self:get_bookmarks_dir()
-    local files = vim.fn.glob(bookmarks_dir.filename .. '/*.json', true, true)
-
-    for _, file in ipairs(files) do
-        local f = io.open(file, 'r')
-        if f then
-            local content = f:read('*all')
-            f:close()
-            local ok, data = pcall(vim.json.decode, content)
-            if ok and data and data[tostring(group_nr)] then
-                local group_data = data[tostring(group_nr)]
-                for filepath, marks in pairs(group_data.marks) do
-                    -- Try to get line content if file exists and is readable
-                    if vim.fn.filereadable(filepath) == 1 then
-                        local bufnr = vim.fn.bufadd(filepath)
-                        vim.fn.bufload(bufnr)
-                        for _, mark in ipairs(marks) do
-                            local text = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)[1] or ''
-                            table.insert(items, {
-                                bufnr = bufnr,
-                                lnum = mark.line,
-                                col = mark.col + 1,
-                                group = group_nr,
-                                line = vim.trim(text),
-                                path = filepath,
-                            })
-                        end
-                    end
-                end
+        if vim.fn.filereadable(filepath) == 1 then
+            local bufnr = vim.fn.bufadd(filepath)
+            vim.fn.bufload(bufnr)
+            for _, mark in ipairs(marks) do
+                local text = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)[1] or ''
+                table.insert(items, {
+                    bufnr = bufnr,
+                    lnum = mark.line,
+                    col = mark.col + 1,
+                    group = group_nr,
+                    line = vim.trim(text),
+                    path = filepath,
+                })
             end
         end
     end
-
     return items
 end
 
