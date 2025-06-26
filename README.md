@@ -73,6 +73,8 @@ require('markit').setup {
   cyclic = true,
   -- whether the shada file is updated after modifying uppercase marks. default false
   force_write_shada = false,
+  -- whether to defer loading of bookmarks. default false
+  defer_load = false,
   -- how often (in ms) to redraw signs/recompute mark positions.
   -- higher value means better performance but may cause visual lag,
   -- while lower value may cause performance penalties. default 150.

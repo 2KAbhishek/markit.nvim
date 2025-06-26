@@ -335,6 +335,7 @@ function M.setup(config)
     M.mark_state.opt.buf_signs = {}
     M.mark_state.opt.force_write_shada = utils.option_nil(config.force_write_shada, false)
     M.mark_state.opt.cyclic = utils.option_nil(config.cyclic, true)
+    config.defer_load = utils.option_nil(config.defer_load, false)
 
     M.mark_state.opt.priority = { 10, 10, 10 }
     local mark_priority = M.mark_state.opt.priority
@@ -350,7 +351,13 @@ function M.setup(config)
         M.bookmark_state.priority = config.sign_priority
     end
 
-    M.bookmark_state:load()
+    if config.defer_load then
+        vim.defer_fn(function()
+            M.bookmark_state:load()
+        end, 0)
+    else
+        M.bookmark_state:load()
+    end
 end
 
 return M
