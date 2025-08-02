@@ -41,13 +41,14 @@ markit.nvim enhances marks experience in neovim, making it easier to navigate an
 - Extract marks to quickfix/location list
 - Set bookmarks with sign/virtual text annotations
 - Quick navigation across buffers
-- Telescope integration for marks and bookmarks
+- PickMe.nvim integration for marks and bookmarks with multiple picker support
 
 ## ⚡ Setup
 
 ### ⚙️ Requirements
 
 - Neovim >= 0.6.0
+- pickme.nvim (for picker integration)
 
 ### 💻 Installation
 
@@ -56,6 +57,7 @@ With lazy.nvim
 ```lua
 {
     '2kabhishek/markit.nvim',
+    dependencies = { '2kabhishek/pickme.nvim' },
     config = load_config('tools.marks'),
     event = { 'BufReadPre', 'BufNewFile' },
 },
@@ -178,15 +180,15 @@ marks.nvim also provides a list of lua APIs for you, which can be used to setup 
 ```lua
     m = {
         name = icons.ui.Bookmark .. 'Marks',
-        b = { "<cmd>lua require('telescope').extensions.markit.bookmarks_list_all()<cr>", 'Bookmarks' },
-        B = { "<cmd>lua require('telescope').extensions.markit.bookmarks_list_all({project_only = true})<cr>", 'Bookmarks In Project' },
+        b = { "<cmd>lua require('markit').bookmarks_list_all()<cr>", 'Bookmarks' },
         d = { "<cmd>lua require('markit').delete_line()<cr>", 'Delete Marks In Line' },
         D = { "<cmd>lua require('markit').delete_buf()<cr>", 'Delete Marks In Buffer' },
         h = { "<cmd>lua require('markit').prev_bookmark()<cr>", 'Previous Bookmark' },
         j = { "<cmd>lua require('markit').next()<cr>", 'Next' },
         k = { "<cmd>lua require('markit').prev()<cr>", 'Previous' },
         l = { "<cmd>lua require('markit').next_bookmark()<cr>", 'Next Bookmark' },
-        m = { '<cmd>Telescope marks<cr>', 'All Marks' },
+        m = { "<cmd>lua require('markit').marks_list_all()<cr>", 'All Marks' },
+        M = { "<cmd>lua require('markit').marks_list_buf()<cr>", 'Buffer Marks' },
         P = { "<cmd>lua require('markit').preview()<cr>", 'Preview' },
         s = { "<cmd>lua require('markit').set_next()<cr>", 'Set Next' },
         t = { "<cmd>lua require('markit').toggle()<cr>", 'Toggle' },
@@ -194,10 +196,7 @@ marks.nvim also provides a list of lua APIs for you, which can be used to setup 
         -- These bindings can go from 1 till 9
         ['1'] = { "<cmd>lua require('markit').toggle_bookmark1()<cr>", 'Toggle Group 1 Bookmark' },
         g = {
-            ['1'] = { '<cmd>lua require("telescope").extensions.markit.bookmarks_list_all({group = 1})<cr>', 'Group 1 Bookmarks' }
-        }
-        G = {
-            ['1'] = { '<cmd>lua require("telescope").extensions.markit.bookmarks_list_all({group = 1, project_only = true})<cr>', 'Group 1 Bookmarks In Project' }
+            ['1'] = { "<cmd>lua require('markit').bookmarks_list_group(1)<cr>", 'Group 1 Bookmarks' }
         }
         n = {
             ['1'] = { "<cmd>lua require('markit').next_bookmark1()<cr>", 'Next Group 1 Bookmark' },
@@ -236,15 +235,15 @@ markit.nvim defines the following commands:
 
 - `:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional buffer number to toggle signs for that buffer only.
 
-- `:MarksListBuf` Fill the location list with all marks in the current buffer.
+- `:MarksListBuf` Open picker with all marks in the current buffer.
 
-- `:MarksListGlobal` Fill the location list with all global marks in open buffers.
+- `:MarksListGlobal` Open picker with all global marks in open buffers.
 
-- `:MarksListAll` Fill the location list with all marks in all open buffers.
+- `:MarksListAll` Open picker with all marks in all open buffers.
 
-- `:BookmarksList group_number` Fill the location list with all bookmarks of group "group_number".
+- `:BookmarksList [group_number]` Open picker with bookmarks. If group_number is provided, shows only that group's bookmarks, otherwise shows all bookmarks.
 
-- `:BookmarksListAll` Fill the location list with all bookmarks, across all groups.
+- `:BookmarksListAll` Open picker with all bookmarks, across all groups.
 
 There are also corresponding commands for those who prefer the quickfix list:
 
@@ -263,35 +262,29 @@ markit.nvim defines the following highlight groups:
 - `MarkSignLineHL` The highlight group for the whole line the sign is placed in.
 - `MarkVirtTextHL` The highlight group for bookmark virtual text annotations.
 
-### Telescope Integration
+### PickMe.nvim Integration
 
-There's a telescope extension allowing to list marks through telescope.
+markit.nvim integrates with pickme.nvim to provide a fuzzy picker interface for marks and bookmarks. This gives you access to multiple picker backends (telescope, snacks, fzf-lua) based on your preference.
 
-To activate it you need to load the extension:
-
-```lua
-telescope.load_extension("markit")
-```
-
-You can then use the extension methods to list marks instead of using the native loclist system:
+You can use the following API functions to list marks and bookmarks in a picker:
 
 ```lua
-require('telescope').extensions.markit.marks_list_buf() -- List buffer marks
-require('telescope').extensions.markit.marks_list_all() -- List all marks
-require('telescope').extensions.markit.bookmarks_list_all() -- List all bookmarks marks
-require('telescope').extensions.markit.bookmarks_list_all({project_only = true}) -- List all bookmarks in current project
-require('telescope').extensions.markit.bookmarks_list_all({group = 1}) -- List all group 1 bookmarks
-require('telescope').extensions.markit.bookmarks_list_all({group = 1, project_only = true}) -- List all group 1 bookmarks in current project
+require('markit').marks_list_buf() -- List buffer marks
+require('markit').marks_list_all() -- List all marks
+require('markit').bookmarks_list_all() -- List all bookmarks
+require('markit').bookmarks_list_group(1) -- List group 1 bookmarks
 ```
+
+The picker will show a preview of the file content around the marked line and allow you to quickly navigate to any mark or bookmark by selecting it.
 
 ## 🏗️ What's Next
 
 ### ✅ To-Do
 
-- [ ] Better telescope previews
+- [x] PickMe.nvim integration for multiple picker backends
 - [ ] Custom notes for bookmarks
 - [ ] Export bookmarks as markdown
-- [ ] Add user commands, fix existing ones
+- [ ] Enhanced preview functionality
 
 ## ⛅ Behind The Code
 
