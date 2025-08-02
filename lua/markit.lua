@@ -1,6 +1,7 @@
 local mark = require('markit.mark')
 local bookmark = require('markit.bookmark')
 local utils = require('markit.utils')
+local pickme = require('pickme')
 local M = {}
 
 function M.set()
@@ -160,6 +161,177 @@ function M.prev_bookmark()
     M.bookmark_state:prev()
 end
 
+-- Pickme.nvim integration functions
+
+---Create entry for marks
+---@param mark_entry table
+---@return table
+local function marks_entry_maker(mark_entry)
+    local display = string.format('[%s] %s', mark_entry.mark, mark_entry.line)
+    if mark_entry.path and mark_entry.path ~= '' then
+        display = display .. ' - ' .. vim.fn.fnamemodify(mark_entry.path, ':t')
+    end
+
+    return {
+        value = mark_entry,
+        display = display,
+        ordinal = mark_entry.mark .. ' ' .. mark_entry.line,
+        path = mark_entry.path,
+    }
+end
+
+---Create entry for bookmarks
+---@param bookmark_entry table
+---@return table
+local function bookmarks_entry_maker(bookmark_entry)
+    local display = string.format('[%d] %s', bookmark_entry.group, bookmark_entry.line)
+    if bookmark_entry.path and bookmark_entry.path ~= '' then
+        display = display .. ' - ' .. vim.fn.fnamemodify(bookmark_entry.path, ':t')
+    end
+
+    return {
+        value = bookmark_entry,
+        display = display,
+        ordinal = bookmark_entry.group .. ' ' .. bookmark_entry.line,
+        path = bookmark_entry.path,
+    }
+end
+
+---Generate preview content for marks/bookmarks
+---@param entry table
+---@return string
+local function generate_preview(entry)
+    if not entry.path or entry.path == '' then
+        return 'No file available for preview'
+    end
+
+    local lines = {}
+    local file_exists = vim.fn.filereadable(entry.path) == 1
+    
+    if not file_exists then
+        return 'File not found: ' .. entry.path
+    end
+
+    -- Read file content
+    local file_lines = vim.fn.readfile(entry.path)
+    local total_lines = #file_lines
+    local target_line = entry.lnum or 1
+    
+    -- Show context around the marked line
+    local context_before = 5
+    local context_after = 5
+    local start_line = math.max(1, target_line - context_before)
+    local end_line = math.min(total_lines, target_line + context_after)
+
+    -- Add file header
+    table.insert(lines, '# ' .. vim.fn.fnamemodify(entry.path, ':t'))
+    table.insert(lines, '')
+    
+    -- Add line numbers and content
+    for i = start_line, end_line do
+        local line_content = file_lines[i] or ''
+        local line_marker = (i == target_line) and '> ' or '  '
+        local line_display = string.format('%s%4d: %s', line_marker, i, line_content)
+        table.insert(lines, line_display)
+    end
+
+    return table.concat(lines, '\n')
+end
+
+---Handle selection for marks/bookmarks
+---@param prompt_bufnr number|nil
+---@param selection table
+local function handle_selection(prompt_bufnr, selection)
+    if not selection or not selection.value then
+        return
+    end
+
+    local entry = selection.value
+    
+    -- Open the file if it has a path
+    if entry.path and entry.path ~= '' then
+        vim.cmd('edit ' .. vim.fn.fnameescape(entry.path))
+    end
+    
+    -- Jump to the line and column
+    if entry.lnum then
+        vim.api.nvim_win_set_cursor(0, { entry.lnum, (entry.col or 1) - 1 })
+        vim.cmd('normal! zz') -- Center the line
+    end
+end
+
+function M.marks_list_buf()
+    local results = M.mark_state:get_buf_list()
+    if not results or #results == 0 then
+        vim.notify('No marks found in current buffer', vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'Buffer Marks',
+            entry_maker = marks_entry_maker,
+            preview_generator = generate_preview,
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
+function M.marks_list_all()
+    local results = M.mark_state:get_all_list()
+    if not results or #results == 0 then
+        vim.notify('No marks found', vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'All Marks',
+            entry_maker = marks_entry_maker,
+            preview_generator = generate_preview,
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
+function M.bookmarks_list_all()
+    local results = M.bookmark_state:get_list({})
+    if not results or #results == 0 then
+        vim.notify('No bookmarks found', vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'All Bookmarks',
+            entry_maker = bookmarks_entry_maker,
+            preview_generator = generate_preview,
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
+function M.bookmarks_list_group(group_nr)
+    local results = M.bookmark_state:get_list({ group = group_nr })
+    if not results or #results == 0 then
+        vim.notify('No bookmarks found in group ' .. group_nr, vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'Bookmark Group ' .. group_nr,
+            entry_maker = bookmarks_entry_maker,
+            preview_generator = generate_preview,
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
 M.mappings = {
     set = 'm',
     set_next = 'm,',
@@ -212,18 +384,15 @@ local function setup_commands()
     end, { nargs = '?' })
 
     vim.api.nvim_create_user_command('MarksListBuf', function()
-        require('markit').mark_state:buffer_to_list()
-        vim.cmd('lopen')
+        require('markit').marks_list_buf()
     end, {})
 
     vim.api.nvim_create_user_command('MarksListGlobal', function()
-        require('markit').mark_state:global_to_list()
-        vim.cmd('lopen')
+        require('markit').marks_list_all()
     end, {})
 
     vim.api.nvim_create_user_command('MarksListAll', function()
-        require('markit').mark_state:all_to_list()
-        vim.cmd('lopen')
+        require('markit').marks_list_all()
     end, {})
 
     -- Marks quickfix commands
@@ -244,13 +413,16 @@ local function setup_commands()
 
     -- Bookmarks commands
     vim.api.nvim_create_user_command('BookmarksList', function(opts)
-        require('markit').bookmark_state:to_list('loclist', tonumber(opts.args))
-        vim.cmd('lopen')
-    end, { nargs = 1 })
+        local group_nr = tonumber(opts.args)
+        if group_nr then
+            require('markit').bookmarks_list_group(group_nr)
+        else
+            require('markit').bookmarks_list_all()
+        end
+    end, { nargs = '?' })
 
     vim.api.nvim_create_user_command('BookmarksListAll', function()
-        require('markit').bookmark_state:all_to_list()
-        vim.cmd('lopen')
+        require('markit').bookmarks_list_all()
     end, {})
 
     -- Bookmarks quickfix commands
