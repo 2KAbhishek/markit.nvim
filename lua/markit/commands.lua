@@ -1,5 +1,3 @@
-local config = require('markit.config').config
-
 local M = {}
 
 M.default_mappings = {
@@ -18,13 +16,7 @@ M.default_mappings = {
     delete_buf = 'dm<space>',
 }
 
-for i, _ in ipairs(config.bookmarks) do
-    local group_index = i - 1
-    M.default_mappings['set_bookmark' .. group_index] = 'm' .. tostring(group_index)
-    M.default_mappings['delete_bookmark' .. group_index] = 'dm' .. tostring(group_index)
-end
-
-local function apply_user_mappings(mappings)
+local function apply_user_mappings(config, mappings)
     if not config.mappings then
         return mappings
     end
@@ -55,19 +47,24 @@ local function apply_original_mappings(mappings)
     end
 end
 
-local function setup_mappings()
+local function setup_mappings(config)
     local mappings = {}
 
     if config.default_mappings then
         mappings = M.default_mappings
+        for i, _ in ipairs(config.bookmarks) do
+            local group_index = i - 1
+            M.default_mappings['set_bookmark' .. group_index] = 'm' .. tostring(group_index)
+            M.default_mappings['delete_bookmark' .. group_index] = 'dm' .. tostring(group_index)
+        end
     end
 
-    mappings = apply_user_mappings(mappings)
+    mappings = apply_user_mappings(config, mappings)
 
     apply_original_mappings(mappings)
 end
 
-local function setup_default_keybindings()
+local function setup_default_keybindings(config)
     local mappings = {
         { '<leader>mm', ':lua require("markit").marks_list_all()<cr>', 'All Marks' },
         { '<leader>mM', ':lua require("markit").marks_list_buf()<cr>', 'Buffer Marks' },
@@ -217,11 +214,11 @@ local function setup_autocommands()
   augroup end]])
 end
 
-function M.setup()
+function M.setup(config)
     setup_commands()
-    setup_mappings()
+    setup_mappings(config)
     if config.add_default_keybindings then
-        setup_default_keybindings()
+        setup_default_keybindings(config)
     end
     setup_highlights()
     setup_autocommands()
