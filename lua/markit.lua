@@ -2,7 +2,6 @@ local mark = require('markit.mark')
 local bookmark = require('markit.bookmark')
 local utils = require('markit.utils')
 local commands = require('markit.commands')
-local config = require('markit.config').config
 local picker = require('markit.picker')
 
 local M = {}
@@ -133,25 +132,6 @@ function M.toggle_signs(bufnr)
     M.refresh(true)
 end
 
-for i, _ in ipairs(config.bookmarks) do
-    local group_index = i - 1
-    M['set_bookmark' .. group_index] = function()
-        M.bookmark_state:place_mark(group_index)
-    end
-    M['toggle_bookmark' .. group_index] = function()
-        M.bookmark_state:toggle_mark(group_index)
-    end
-    M['delete_bookmark' .. group_index] = function()
-        M.bookmark_state:delete_all(group_index)
-    end
-    M['next_bookmark' .. group_index] = function()
-        M.bookmark_state:next(group_index)
-    end
-    M['prev_bookmark' .. group_index] = function()
-        M.bookmark_state:prev(group_index)
-    end
-end
-
 function M.delete_bookmark()
     M.bookmark_state:delete_mark_cursor()
 end
@@ -180,7 +160,28 @@ function M.bookmarks_list_group(group_nr)
     picker.bookmarks_list_group(M.bookmark_state, group_nr)
 end
 
-local function assign_defaults()
+local function add_bookmark_commands(bookmarks)
+    for i, _ in ipairs(bookmarks) do
+        local group_index = i - 1
+        M['set_bookmark' .. group_index] = function()
+            M.bookmark_state:place_mark(group_index)
+        end
+        M['toggle_bookmark' .. group_index] = function()
+            M.bookmark_state:toggle_mark(group_index)
+        end
+        M['delete_bookmark' .. group_index] = function()
+            M.bookmark_state:delete_all(group_index)
+        end
+        M['next_bookmark' .. group_index] = function()
+            M.bookmark_state:next(group_index)
+        end
+        M['prev_bookmark' .. group_index] = function()
+            M.bookmark_state:prev(group_index)
+        end
+    end
+end
+
+local function assign_defaults(config)
     M.mark_state = mark.new()
     M.mark_state.builtin_marks = config.builtin_marks
 
@@ -235,9 +236,11 @@ local function assign_defaults()
 end
 
 function M.setup(opts)
-    require('markit.config').setup(opts)
-    assign_defaults()
-    commands.setup()
+    local config_module = require('markit.config')
+    config_module.setup(opts)
+    assign_defaults(config_module.config)
+    add_bookmark_commands(config_module.config.bookmarks)
+    commands.setup(config_module.config)
 end
 
 return M

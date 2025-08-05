@@ -1,5 +1,4 @@
 local pickme = require('pickme')
-local config = require('markit.config').config
 
 local M = {}
 
@@ -58,6 +57,7 @@ end
 ---@param group_nr number
 ---@return string icon, string description
 local function get_bookmark_info(group_nr)
+    local config = require('markit.config').config
     local colors = { 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet', 'Pink', 'Cyan', 'Gray' }
     local color = colors[group_nr + 1] or 'Default'
 
