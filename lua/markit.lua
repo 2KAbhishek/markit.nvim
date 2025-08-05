@@ -2,7 +2,7 @@ local mark = require('markit.mark')
 local bookmark = require('markit.bookmark')
 local utils = require('markit.utils')
 local commands = require('markit.commands')
-local config = require('markit.config')
+local config = require('markit.config').config
 local pickme = require('pickme')
 
 local M = {}
@@ -133,22 +133,22 @@ function M.toggle_signs(bufnr)
     M.refresh(true)
 end
 
--- set_group[0-9] functions
-for i = 0, 9 do
-    M['set_bookmark' .. i] = function()
-        M.bookmark_state:place_mark(i)
+for i, _ in ipairs(config.bookmarks) do
+    local group_index = i - 1
+    M['set_bookmark' .. group_index] = function()
+        M.bookmark_state:place_mark(group_index)
     end
-    M['toggle_bookmark' .. i] = function()
-        M.bookmark_state:toggle_mark(i)
+    M['toggle_bookmark' .. group_index] = function()
+        M.bookmark_state:toggle_mark(group_index)
     end
-    M['delete_bookmark' .. i] = function()
-        M.bookmark_state:delete_all(i)
+    M['delete_bookmark' .. group_index] = function()
+        M.bookmark_state:delete_all(group_index)
     end
-    M['next_bookmark' .. i] = function()
-        M.bookmark_state:next(i)
+    M['next_bookmark' .. group_index] = function()
+        M.bookmark_state:next(group_index)
     end
-    M['prev_bookmark' .. i] = function()
-        M.bookmark_state:prev(i)
+    M['prev_bookmark' .. group_index] = function()
+        M.bookmark_state:prev(group_index)
     end
 end
 
@@ -553,31 +553,30 @@ function M.bookmarks_list_group(group_nr)
 end
 
 local function assign_defaults()
-    local config_options = config.config
     M.mark_state = mark.new()
-    M.mark_state.builtin_marks = config_options.builtin_marks
+    M.mark_state.builtin_marks = config.builtin_marks
 
     M.bookmark_state = bookmark.new()
 
-    for i = 0, 9 do
-        local bookmark_config = config_options['bookmark_' .. i]
-        if bookmark_config.sign == false then
-            M.bookmark_state.signs[i] = nil
+    for i, bookmark_config in ipairs(config.bookmarks) do
+        local group_index = i - 1
+        if bookmark_config.sign == '' then
+            M.bookmark_state.signs[group_index] = nil
         else
-            M.bookmark_state.signs[i] = bookmark_config.sign
+            M.bookmark_state.signs[group_index] = bookmark_config.sign
         end
-        M.bookmark_state.virt_text[i] = bookmark_config.virt_text
-        M.bookmark_state.prompt_annotate[i] = bookmark_config.annotate
+        M.bookmark_state.virt_text[group_index] = bookmark_config.virt_text
+        M.bookmark_state.prompt_annotate[group_index] = bookmark_config.annotate
     end
 
     local excluded_fts = {}
-    for _, ft in ipairs(config_options.excluded_filetypes) do
+    for _, ft in ipairs(config.excluded_filetypes) do
         excluded_fts[ft] = true
     end
     M.excluded_fts = excluded_fts
 
     local excluded_bts = {}
-    for _, bt in ipairs(config_options.excluded_buftypes) do
+    for _, bt in ipairs(config.excluded_buftypes) do
         excluded_bts[bt] = true
     end
     M.excluded_bts = excluded_bts
@@ -585,32 +584,32 @@ local function assign_defaults()
     M.bookmark_state.opt.signs = true
     M.bookmark_state.opt.buf_signs = {}
 
-    M.mark_state.opt.signs = config_options.signs
+    M.mark_state.opt.signs = config.signs
     M.mark_state.opt.buf_signs = {}
-    M.mark_state.opt.force_write_shada = config_options.force_write_shada
-    M.mark_state.opt.cyclic = config_options.cyclic
+    M.mark_state.opt.force_write_shada = config.force_write_shada
+    M.mark_state.opt.cyclic = config.cyclic
 
     M.mark_state.opt.priority = { 10, 10, 10 }
     local mark_priority = M.mark_state.opt.priority
-    if type(config_options.sign_priority) == 'table' then
-        mark_priority[1] = config_options.sign_priority.lower
-        mark_priority[2] = config_options.sign_priority.upper
-        mark_priority[3] = config_options.sign_priority.builtin
-        M.bookmark_state.priority = config_options.sign_priority.bookmark
-    elseif type(config_options.sign_priority) == 'number' then
-        mark_priority[1] = config_options.sign_priority
-        mark_priority[2] = config_options.sign_priority
-        mark_priority[3] = config_options.sign_priority
-        M.bookmark_state.priority = config_options.sign_priority
+    if type(config.sign_priority) == 'table' then
+        mark_priority[1] = config.sign_priority.lower
+        mark_priority[2] = config.sign_priority.upper
+        mark_priority[3] = config.sign_priority.builtin
+        M.bookmark_state.priority = config.sign_priority.bookmark
+    elseif type(config.sign_priority) == 'number' then
+        mark_priority[1] = config.sign_priority
+        mark_priority[2] = config.sign_priority
+        mark_priority[3] = config.sign_priority
+        M.bookmark_state.priority = config.sign_priority
     end
 
     M.bookmark_state:load()
 end
 
 function M.setup(opts)
-    config.setup(opts)
-    commands.setup()
+    require('markit.config').setup(opts)
     assign_defaults()
+    commands.setup()
 end
 
 return M

@@ -18,9 +18,10 @@ M.default_mappings = {
     delete_buf = 'dm<space>',
 }
 
-for i = 0, 9 do
-    M.default_mappings['set_bookmark' .. i] = 'm' .. tostring(i)
-    M.default_mappings['delete_bookmark' .. i] = 'dm' .. tostring(i)
+for i, _ in ipairs(config.bookmarks) do
+    local group_index = i - 1
+    M.default_mappings['set_bookmark' .. group_index] = 'm' .. tostring(group_index)
+    M.default_mappings['delete_bookmark' .. group_index] = 'dm' .. tostring(group_index)
 end
 
 local function apply_user_mappings(mappings)
@@ -98,35 +99,36 @@ local function setup_default_keybindings()
         { '<leader>mqg', ':MarksQFListGlobal<cr>', 'Global Marks → QuickFix' },
     }
 
-    for i = 0, 9 do
+    for i, _ in ipairs(config.bookmarks) do
+        local group_index = i - 1
         table.insert(mappings, {
-            string.format('<leader>m%d', i),
-            string.format(':lua require("markit").toggle_bookmark%d()<cr>', i),
-            string.format('Toggle Group %d Bookmark', i),
+            string.format('<leader>m%d', group_index),
+            string.format(':lua require("markit").toggle_bookmark%d()<cr>', group_index),
+            string.format('Toggle Group %d Bookmark', group_index),
         })
 
         table.insert(mappings, {
-            string.format('<leader>mp%d', i),
-            string.format(':lua require("markit").prev_bookmark%d()<cr>', i),
-            string.format('Previous Group %d Bookmark', i),
+            string.format('<leader>mp%d', group_index),
+            string.format(':lua require("markit").prev_bookmark%d()<cr>', group_index),
+            string.format('Previous Group %d Bookmark', group_index),
         })
 
         table.insert(mappings, {
-            string.format('<leader>mn%d', i),
-            string.format(':lua require("markit").next_bookmark%d()<cr>', i),
-            string.format('Next Group %d Bookmark', i),
+            string.format('<leader>mn%d', group_index),
+            string.format(':lua require("markit").next_bookmark%d()<cr>', group_index),
+            string.format('Next Group %d Bookmark', group_index),
         })
 
         table.insert(mappings, {
-            string.format('<leader>mg%d', i),
-            string.format(':lua require("markit").bookmarks_list_group(%d)<cr>', i),
-            string.format('Group %d Bookmarks', i),
+            string.format('<leader>mg%d', group_index),
+            string.format(':lua require("markit").bookmarks_list_group(%d)<cr>', group_index),
+            string.format('Group %d Bookmarks', group_index),
         })
 
         table.insert(mappings, {
-            string.format('<leader>mq%d', i),
-            string.format(':BookmarksQFList %d<cr>', i),
-            string.format('Group %d Bookmarks → QuickFix', i),
+            string.format('<leader>mq%d', group_index),
+            string.format(':BookmarksQFList %d<cr>', group_index),
+            string.format('Group %d Bookmarks → QuickFix', group_index),
         })
     end
 

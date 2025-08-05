@@ -91,16 +91,15 @@ require('markit').setup {
   excluded_filetypes = {},
   -- disables mark tracking for specific buftypes. default {}
   excluded_buftypes = {},
-  -- marks.nvim allows you to configure up to 10 bookmark groups, each with its own
-  -- sign/virttext. Bookmarks can be used to group together positions and quickly move
-  -- across multiple buffers. default sign is '!@#$%^&*()' (from 0 to 9), and
-  -- default virt_text is "".
-  bookmark_0 = {
-    sign = "⚑",
-    virt_text = "hello world",
-    -- explicitly prompt for a virtual line annotation when setting a bookmark from this group.
-    -- defaults to false.
-    annotate = false,
+  -- bookmark groups configuration
+  bookmarks = {
+    { 
+      sign = "⚑",           -- string: sign character to display (empty string to disable)
+      virt_text = "hello",  -- string: virtual text to show at end of line  
+      annotate = false      -- boolean: whether to prompt for annotation when setting bookmark
+    },
+    { sign = "!", virt_text = "", annotate = false },
+    { sign = "@", virt_text = "", annotate = true },
   },
   mappings = {}
 }
