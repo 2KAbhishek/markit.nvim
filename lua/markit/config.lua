@@ -6,7 +6,6 @@ local M = {}
 ---@field annotate boolean : Whether to prompt for annotation when setting bookmark
 
 ---@class markit.config
----@field default_mappings boolean : Whether to map default keybinds (m, dm, etc.)
 ---@field add_default_keybindings boolean : Whether to add comprehensive default keybindings
 ---@field builtin_marks table : Which builtin marks to show in sign column
 ---@field cyclic boolean : Whether movements cycle back to beginning/end of buffer
@@ -16,12 +15,9 @@ local M = {}
 ---@field excluded_filetypes table : Filetypes to disable mark tracking for
 ---@field excluded_buftypes table : Buffer types to disable mark tracking for
 ---@field signs boolean : Whether to show signs in sign column
----@field mappings table : Custom mappings to override defaults
----@field bookmarks MarkitBookmark[] : Array of bookmark group configurations (index 1-10 for groups 0-9)
+---@field bookmarks MarkitBookmark[] : Array of bookmark group configurations
 M.config = {
-    default_mappings = true,
     add_default_keybindings = true,
-    mappings = {},
 
     builtin_marks = {},
     signs = true,

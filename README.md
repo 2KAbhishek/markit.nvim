@@ -48,7 +48,7 @@ markit.nvim enhances marks experience in neovim, making it easier to navigate an
 ### ⚙️ Requirements
 
 - Neovim >= 0.6.0
-- pickme.nvim (for picker integration)
+- [pickme.nvim](https://github.com/2kabhishek/picker.nvim) (for picker integration)
 
 ### 💻 Installation
 
@@ -67,8 +67,6 @@ With lazy.nvim
 
 ```lua
 require('markit').setup {
-  -- whether to map keybinds or not. default true
-  default_mappings = true,
   -- whether to add comprehensive default keybindings. default true
   add_default_keybindings = true,
   -- which builtin marks to show. default {}
@@ -93,88 +91,42 @@ require('markit').setup {
   excluded_buftypes = {},
   -- bookmark groups configuration
   bookmarks = {
-    { 
+    {
       sign = "⚑",           -- string: sign character to display (empty string to disable)
-      virt_text = "hello",  -- string: virtual text to show at end of line  
+      virt_text = "hello",  -- string: virtual text to show at end of line
       annotate = false      -- boolean: whether to prompt for annotation when setting bookmark
     },
     { sign = "!", virt_text = "", annotate = false },
     { sign = "@", virt_text = "", annotate = true },
   },
-  mappings = {}
 }
 ```
 
 ## 🚀 Usage
 
-### Mappings
+### Commands
 
-The following default mappings are included:
+markit.nvim defines the following commands:
 
-```
-    mx              Set mark x
-    m,              Set the next available alphabetical (lowercase) mark
-    m;              Toggle the next available mark at the current line
-    dmx             Delete mark x
-    dm-             Delete all marks on the current line
-    dm<space>       Delete all marks in the current buffer
-    m]              Move to next mark
-    m[              Move to previous mark
-    m:              Preview mark. This will prompt you for a specific mark to
-                    preview; press <cr> to preview the next mark.
-    Mx              Toggle mark x
-    m[0-9]          Add a bookmark from bookmark group[0-9].
-    dm[0-9]         Delete all bookmarks from bookmark group[0-9].
-    m}              Move to the next bookmark having the same type as the bookmark under
-                    the cursor. Works across buffers.
-    m{              Move to the previous bookmark having the same type as the bookmark under
-                    the cursor. Works across buffers.
-    dm=             Delete the bookmark under the cursor.
-```
+- `:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional buffer number to toggle signs for that buffer only.
 
-Set `default_mappings = false` in the setup function if you don't want to have these mapped.
+- `:MarksListBuf` Open picker with all marks in the current buffer.
 
-You can change the keybindings by setting the `mapping` table in the setup function:
+- `:MarksListGlobal` Open picker with all global marks in open buffers.
 
-```lua
-require('markit').setup {
-    mappings = {
-        set = 'M',
-        toggle_mark = 'm',
-        set_next = false -- pass false to disable only this default mapping
-    },
-}
-```
+- `:MarksListAll` Open picker with all marks in all open buffers.
 
-The following keys are available to be passed to the mapping table:
+- `:BookmarksList [group_number]` Open picker with bookmarks. If group_number is provided, shows only that group's bookmarks, otherwise shows all bookmarks.
 
-```
-  set_next               Set next available lowercase mark at cursor.
-  toggle                 Toggle next available mark at cursor.
-  toggle_mark            Toggle a mark at the current line.
-  delete_line            Deletes all marks on current line.
-  delete_buf             Deletes all marks in current buffer.
-  next                   Goes to next mark in buffer.
-  prev                   Goes to previous mark in buffer.
-  preview                Previews mark (will wait for user input). press <cr> to just preview the next mark.
-  set                    Sets a letter mark (will wait for input).
-  delete                 Delete a letter mark (will wait for input).
-  set_bookmark[0-9]      Sets a bookmark from group[0-9].
-  delete_bookmark[0-9]   Deletes all bookmarks from group[0-9].
-  delete_bookmark        Deletes the bookmark under the cursor.
-  next_bookmark          Moves to the next bookmark having the same type as the
-                         bookmark under the cursor.
-  prev_bookmark          Moves to the previous bookmark having the same type as the
-                         bookmark under the cursor.
-  next_bookmark[0-9]     Moves to the next bookmark of the same group type. Works by
-                         first going according to line number, and then according to buffer
-                         number.
-  prev_bookmark[0-9]     Moves to the previous bookmark of the same group type. Works by
-                         first going according to line number, and then according to buffer
-                         number.
-  annotate               Prompts the user for a virtual line annotation that is then placed
-                         above the bookmark. Requires neovim 0.6+ and is not mapped by default.
-```
+- `:BookmarksListAll` Open picker with all bookmarks, across all groups.
+
+There are also corresponding commands for those who prefer the quickfix list:
+
+- `:MarksQFListBuf`
+- `:MarksQFListGlobal`
+- `:MarksQFListAll`
+- `:BookmarksQFList group_number`
+- `:BookmarksQFListAll`
 
 ### Keybindings
 
@@ -207,6 +159,7 @@ By default, these are the configured keybindings.
 | `<leader>m[0-9]`  | `:lua require("markit").toggle_bookmark[0-9]()<cr>`      | Toggle Group [0-9] Bookmark      |
 | `<leader>mn[0-9]` | `:lua require("markit").next_bookmark[0-9]()<cr>`        | Next Group [0-9] Bookmark        |
 | `<leader>mp[0-9]` | `:lua require("markit").prev_bookmark[0-9]()<cr>`        | Previous Group [0-9] Bookmark    |
+| `<leader>mc[0-9]` | `:lua require("markit").delete_bookmark[0-9]()<cr>`      | Clear Group [0-9] Bookmarks      |
 | `<leader>mg[0-9]` | `:lua require("markit").bookmarks_list_group([0-9])<cr>` | Group [0-9] Bookmarks            |
 | `<leader>mq[0-9]` | `:BookmarksQFList [0-9]<cr>`                             | Group [0-9] Bookmarks → QuickFix |
 
@@ -234,30 +187,6 @@ For example, you might set two bookmarks to quickly toggle back and forth betwee
 
 markit.nvim supports up to 10 bookmark groups (0-9), each with its own optional sign text and virtual text annotations.
 
-### Commands
-
-markit.nvim defines the following commands:
-
-- `:MarksToggleSigns[ buffer]` Toggle signs globally. Also accepts an optional buffer number to toggle signs for that buffer only.
-
-- `:MarksListBuf` Open picker with all marks in the current buffer.
-
-- `:MarksListGlobal` Open picker with all global marks in open buffers.
-
-- `:MarksListAll` Open picker with all marks in all open buffers.
-
-- `:BookmarksList [group_number]` Open picker with bookmarks. If group_number is provided, shows only that group's bookmarks, otherwise shows all bookmarks.
-
-- `:BookmarksListAll` Open picker with all bookmarks, across all groups.
-
-There are also corresponding commands for those who prefer the quickfix list:
-
-- `:MarksQFListBuf`
-- `:MarksQFListGlobal`
-- `:MarksQFListAll`
-- `:BookmarksQFList group_number`
-- `:BookmarksQFListAll`
-
 ### Highlights
 
 markit.nvim defines the following highlight groups:
@@ -266,19 +195,6 @@ markit.nvim defines the following highlight groups:
 - `MarkSignNumHL` The highlight group for the number line in a signcolumn.
 - `MarkSignLineHL` The highlight group for the whole line the sign is placed in.
 - `MarkVirtTextHL` The highlight group for bookmark virtual text annotations.
-
-### PickMe.nvim Integration
-
-markit.nvim integrates with pickme.nvim to provide a fuzzy picker interface for marks and bookmarks. This gives you access to multiple picker backends (telescope, snacks, fzf-lua) based on your preference.
-
-You can use the following API functions to list marks and bookmarks in a picker:
-
-```lua
-require('markit').marks_list_buf() -- List buffer marks
-require('markit').marks_list_all() -- List all marks
-require('markit').bookmarks_list_all() -- List all bookmarks
-require('markit').bookmarks_list_group(1) -- List group 1 bookmarks
-```
 
 The picker will show a preview of the file content around the marked line and allow you to quickly navigate to any mark or bookmark by selecting it.
 
