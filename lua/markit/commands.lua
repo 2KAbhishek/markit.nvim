@@ -1,6 +1,7 @@
+local config = require('markit.config').config
+
 local M = {}
 
--- Original mapping system (single-key mappings from marks.nvim)
 M.default_mappings = {
     set = 'm',
     set_next = 'm,',
@@ -17,13 +18,12 @@ M.default_mappings = {
     delete_buf = 'dm<space>',
 }
 
--- Add bookmark group mappings to default mappings
 for i = 0, 9 do
     M.default_mappings['set_bookmark' .. i] = 'm' .. tostring(i)
     M.default_mappings['delete_bookmark' .. i] = 'dm' .. tostring(i)
 end
 
-local function apply_user_mappings(config, mappings)
+local function apply_user_mappings(mappings)
     if not config.mappings then
         return mappings
     end
@@ -54,18 +54,15 @@ local function apply_original_mappings(mappings)
     end
 end
 
-local function setup_mappings(config)
+local function setup_mappings()
     local mappings = {}
 
-    -- Only setup original mappings if default_mappings is true
     if config.default_mappings then
         mappings = M.default_mappings
     end
 
-    -- Apply user customizations
-    mappings = apply_user_mappings(config, mappings)
+    mappings = apply_user_mappings(mappings)
 
-    -- Apply the mappings
     apply_original_mappings(mappings)
 end
 
@@ -142,50 +139,40 @@ local function setup_default_keybindings()
     end
 end
 
-local function setup_highlights()
-    vim.api.nvim_set_hl(0, 'MarkSignHL', { link = 'Identifier', default = true })
-    vim.api.nvim_set_hl(0, 'MarkSignLineHL', { link = 'NONE', default = true })
-    vim.api.nvim_set_hl(0, 'MarkSignNumHL', { link = 'CursorLineNr', default = true })
-    vim.api.nvim_set_hl(0, 'MarkVirtTextHL', { link = 'Comment', default = true })
-end
-
--- Setup commands
 local function setup_commands()
-    -- Marks commands
-    vim.api.nvim_create_user_command('MarksToggleSigns', function(opts)
+    local add_user_command = vim.api.nvim_create_user_command
+    add_user_command('MarksToggleSigns', function(opts)
         require('markit').toggle_signs(opts.args)
     end, { nargs = '?' })
 
-    vim.api.nvim_create_user_command('MarksListBuf', function()
+    add_user_command('MarksListBuf', function()
         require('markit').marks_list_buf()
     end, {})
 
-    vim.api.nvim_create_user_command('MarksListGlobal', function()
+    add_user_command('MarksListGlobal', function()
         require('markit').marks_list_all()
     end, {})
 
-    vim.api.nvim_create_user_command('MarksListAll', function()
+    add_user_command('MarksListAll', function()
         require('markit').marks_list_all()
     end, {})
 
-    -- Marks quickfix commands
-    vim.api.nvim_create_user_command('MarksQFListBuf', function()
+    add_user_command('MarksQFListBuf', function()
         require('markit').mark_state:buffer_to_list('quickfixlist')
         vim.cmd('copen')
     end, {})
 
-    vim.api.nvim_create_user_command('MarksQFListGlobal', function()
+    add_user_command('MarksQFListGlobal', function()
         require('markit').mark_state:global_to_list('quickfixlist')
         vim.cmd('copen')
     end, {})
 
-    vim.api.nvim_create_user_command('MarksQFListAll', function()
+    add_user_command('MarksQFListAll', function()
         require('markit').mark_state:all_to_list('quickfixlist')
         vim.cmd('copen')
     end, {})
 
-    -- Bookmarks commands
-    vim.api.nvim_create_user_command('BookmarksList', function(opts)
+    add_user_command('BookmarksList', function(opts)
         local group_nr = tonumber(opts.args)
         if group_nr then
             require('markit').bookmarks_list_group(group_nr)
@@ -194,20 +181,27 @@ local function setup_commands()
         end
     end, { nargs = '?' })
 
-    vim.api.nvim_create_user_command('BookmarksListAll', function()
+    add_user_command('BookmarksListAll', function()
         require('markit').bookmarks_list_all()
     end, {})
 
-    -- Bookmarks quickfix commands
-    vim.api.nvim_create_user_command('BookmarksQFList', function(opts)
+    add_user_command('BookmarksQFList', function(opts)
         require('markit').bookmark_state:to_list('quickfixlist', tonumber(opts.args))
         vim.cmd('copen')
     end, { nargs = 1 })
 
-    vim.api.nvim_create_user_command('BookmarksQFListAll', function()
+    add_user_command('BookmarksQFListAll', function()
         require('markit').bookmark_state:all_to_list('quickfixlist')
         vim.cmd('copen')
     end, {})
+end
+
+local function setup_highlights()
+    local set_hl = vim.api.nvim_set_hl
+    set_hl(0, 'MarkSignHL', { link = 'Identifier', default = true })
+    set_hl(0, 'MarkSignLineHL', { link = 'NONE', default = true })
+    set_hl(0, 'MarkSignNumHL', { link = 'CursorLineNr', default = true })
+    set_hl(0, 'MarkVirtTextHL', { link = 'Comment', default = true })
 end
 
 local function setup_autocommands()
@@ -222,19 +216,13 @@ local function setup_autocommands()
 end
 
 function M.setup()
-    config.default_mappings = utils.option_nil(config.default_mappings, true)
-    config.add_default_keybindings = utils.option_nil(config.add_default_keybindings, true)
-
-    setup_highlights()
     setup_commands()
-    setup_autocommands()
-
-    -- Setup all mappings through commands module
-    commands.setup_mappings(config)
-
+    setup_mappings()
     if config.add_default_keybindings then
-        commands.setup_default_keybindings()
+        setup_default_keybindings()
     end
+    setup_highlights()
+    setup_autocommands()
 end
 
 return M
