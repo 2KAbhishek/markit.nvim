@@ -1,6 +1,75 @@
 local M = {}
 
-function M.setup_default_keybindings()
+-- Original mapping system (single-key mappings from marks.nvim)
+M.default_mappings = {
+    set = 'm',
+    set_next = 'm,',
+    toggle = 'm;',
+    toggle_mark = 'M',
+    next = 'm]',
+    prev = 'm[',
+    preview = 'm:',
+    next_bookmark = 'm}',
+    prev_bookmark = 'm{',
+    delete = 'dm',
+    delete_line = 'dm-',
+    delete_bookmark = 'dm=',
+    delete_buf = 'dm<space>',
+}
+
+-- Add bookmark group mappings to default mappings
+for i = 0, 9 do
+    M.default_mappings['set_bookmark' .. i] = 'm' .. tostring(i)
+    M.default_mappings['delete_bookmark' .. i] = 'dm' .. tostring(i)
+end
+
+local function apply_user_mappings(config, mappings)
+    if not config.mappings then
+        return mappings
+    end
+
+    local result = vim.deepcopy(mappings)
+    for cmd, key in pairs(config.mappings) do
+        if key ~= false then
+            result[cmd] = key
+        else
+            result[cmd] = nil
+        end
+    end
+    return result
+end
+
+local function apply_original_mappings(mappings)
+    for cmd, key in pairs(mappings) do
+        if key then
+            vim.api.nvim_set_keymap('n', key, '', {
+                callback = function()
+                    require('markit')[cmd]()
+                end,
+                desc = 'markit: ' .. cmd:gsub('_', ' '),
+                noremap = true,
+                silent = true,
+            })
+        end
+    end
+end
+
+local function setup_mappings(config)
+    local mappings = {}
+
+    -- Only setup original mappings if default_mappings is true
+    if config.default_mappings then
+        mappings = M.default_mappings
+    end
+
+    -- Apply user customizations
+    mappings = apply_user_mappings(config, mappings)
+
+    -- Apply the mappings
+    apply_original_mappings(mappings)
+end
+
+local function setup_default_keybindings()
     local mappings = {
         { '<leader>mm', ':lua require("markit").marks_list_all()<cr>', 'All Marks' },
         { '<leader>mM', ':lua require("markit").marks_list_buf()<cr>', 'Buffer Marks' },
@@ -70,6 +139,101 @@ function M.setup_default_keybindings()
             noremap = true,
             silent = true,
         })
+    end
+end
+
+local function setup_highlights()
+    vim.api.nvim_set_hl(0, 'MarkSignHL', { link = 'Identifier', default = true })
+    vim.api.nvim_set_hl(0, 'MarkSignLineHL', { link = 'NONE', default = true })
+    vim.api.nvim_set_hl(0, 'MarkSignNumHL', { link = 'CursorLineNr', default = true })
+    vim.api.nvim_set_hl(0, 'MarkVirtTextHL', { link = 'Comment', default = true })
+end
+
+-- Setup commands
+local function setup_commands()
+    -- Marks commands
+    vim.api.nvim_create_user_command('MarksToggleSigns', function(opts)
+        require('markit').toggle_signs(opts.args)
+    end, { nargs = '?' })
+
+    vim.api.nvim_create_user_command('MarksListBuf', function()
+        require('markit').marks_list_buf()
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksListGlobal', function()
+        require('markit').marks_list_all()
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksListAll', function()
+        require('markit').marks_list_all()
+    end, {})
+
+    -- Marks quickfix commands
+    vim.api.nvim_create_user_command('MarksQFListBuf', function()
+        require('markit').mark_state:buffer_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksQFListGlobal', function()
+        require('markit').mark_state:global_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+
+    vim.api.nvim_create_user_command('MarksQFListAll', function()
+        require('markit').mark_state:all_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+
+    -- Bookmarks commands
+    vim.api.nvim_create_user_command('BookmarksList', function(opts)
+        local group_nr = tonumber(opts.args)
+        if group_nr then
+            require('markit').bookmarks_list_group(group_nr)
+        else
+            require('markit').bookmarks_list_all()
+        end
+    end, { nargs = '?' })
+
+    vim.api.nvim_create_user_command('BookmarksListAll', function()
+        require('markit').bookmarks_list_all()
+    end, {})
+
+    -- Bookmarks quickfix commands
+    vim.api.nvim_create_user_command('BookmarksQFList', function(opts)
+        require('markit').bookmark_state:to_list('quickfixlist', tonumber(opts.args))
+        vim.cmd('copen')
+    end, { nargs = 1 })
+
+    vim.api.nvim_create_user_command('BookmarksQFListAll', function()
+        require('markit').bookmark_state:all_to_list('quickfixlist')
+        vim.cmd('copen')
+    end, {})
+end
+
+local function setup_autocommands()
+    vim.cmd([[augroup Marks_autocmds
+    autocmd!
+    autocmd BufEnter * lua require'markit'.refresh(true)
+    autocmd CursorHold * lua require'markit'.refresh()
+    autocmd BufDelete * lua require'markit'._on_delete()
+    autocmd VimLeavePre * lua require'markit'.bookmark_state:save()
+    autocmd DirChanged * lua require'markit'.bookmark_state:load()
+  augroup end]])
+end
+
+function M.setup()
+    config.default_mappings = utils.option_nil(config.default_mappings, true)
+    config.add_default_keybindings = utils.option_nil(config.add_default_keybindings, true)
+
+    setup_highlights()
+    setup_commands()
+    setup_autocommands()
+
+    -- Setup all mappings through commands module
+    commands.setup_mappings(config)
+
+    if config.add_default_keybindings then
+        commands.setup_default_keybindings()
     end
 end
 
