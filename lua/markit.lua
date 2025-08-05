@@ -715,10 +715,17 @@ function M.setup(config)
     M.bookmark_state.opt.buf_signs = {}
 
     config.default_mappings = utils.option_nil(config.default_mappings, true)
+    config.add_default_keybindings = utils.option_nil(config.add_default_keybindings, true)
+
     setup_mappings(config)
     setup_highlights()
     setup_commands()
     setup_autocommands()
+
+    if config.add_default_keybindings then
+        local commands = require('markit.commands')
+        commands.setup_default_keybindings()
+    end
 
     M.mark_state.opt.signs = utils.option_nil(config.signs, true)
     M.mark_state.opt.buf_signs = {}
