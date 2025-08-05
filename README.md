@@ -69,6 +69,8 @@ With lazy.nvim
 require('markit').setup {
   -- whether to map keybinds or not. default true
   default_mappings = true,
+  -- whether to add comprehensive default keybindings. default true
+  add_default_keybindings = true,
   -- which builtin marks to show. default {}
   builtin_marks = { ".", "<", ">", "^" },
   -- whether movements cycle back to the beginning/end of buffer. default true
@@ -175,37 +177,41 @@ The following keys are available to be passed to the mapping table:
                          above the bookmark. Requires neovim 0.6+ and is not mapped by default.
 ```
 
-marks.nvim also provides a list of lua APIs for you, which can be used to setup mappings, here's what my config with which key looks like:
+### Keybindings
 
-```lua
-    m = {
-        name = icons.ui.Bookmark .. 'Marks',
-        b = { "<cmd>lua require('markit').bookmarks_list_all()<cr>", 'Bookmarks' },
-        d = { "<cmd>lua require('markit').delete_line()<cr>", 'Delete Marks In Line' },
-        D = { "<cmd>lua require('markit').delete_buf()<cr>", 'Delete Marks In Buffer' },
-        h = { "<cmd>lua require('markit').prev_bookmark()<cr>", 'Previous Bookmark' },
-        j = { "<cmd>lua require('markit').next()<cr>", 'Next' },
-        k = { "<cmd>lua require('markit').prev()<cr>", 'Previous' },
-        l = { "<cmd>lua require('markit').next_bookmark()<cr>", 'Next Bookmark' },
-        m = { "<cmd>lua require('markit').marks_list_all()<cr>", 'All Marks' },
-        M = { "<cmd>lua require('markit').marks_list_buf()<cr>", 'Buffer Marks' },
-        P = { "<cmd>lua require('markit').preview()<cr>", 'Preview' },
-        s = { "<cmd>lua require('markit').set_next()<cr>", 'Set Next' },
-        t = { "<cmd>lua require('markit').toggle()<cr>", 'Toggle' },
-        x = { "<cmd>lua require('markit').delete_bookmark()<cr>", 'Delete Bookmark' },
-        -- These bindings can go from 1 till 9
-        ['1'] = { "<cmd>lua require('markit').toggle_bookmark1()<cr>", 'Toggle Group 1 Bookmark' },
-        g = {
-            ['1'] = { "<cmd>lua require('markit').bookmarks_list_group(1)<cr>", 'Group 1 Bookmarks' }
-        }
-        n = {
-            ['1'] = { "<cmd>lua require('markit').next_bookmark1()<cr>", 'Next Group 1 Bookmark' },
-        },
-        p = {
-            ['1'] = { "<cmd>lua require('markit').prev_bookmark1()<cr>", 'Previous Group 1 Bookmark' },
-        },
-    },
-```
+By default, these are the configured keybindings.
+
+| Keybinding        | Command                                                  | Description                      |
+| ----------------- | -------------------------------------------------------- | -------------------------------- |
+| `<leader>mm`      | `:lua require("markit").marks_list_all()<cr>`            | All Marks                        |
+| `<leader>mM`      | `:lua require("markit").marks_list_buf()<cr>`            | Buffer Marks                     |
+| `<leader>ms`      | `:lua require("markit").set_next()<cr>`                  | Set Next Available Mark          |
+| `<leader>mS`      | `:lua require("markit").set()<cr>`                       | Set Mark (Interactive)           |
+| `<leader>mt`      | `:lua require("markit").toggle()<cr>`                    | Toggle Mark at Cursor            |
+| `<leader>mT`      | `:lua require("markit").toggle_mark()<cr>`               | Toggle Mark (Interactive)        |
+| `<leader>mj`      | `:lua require("markit").next()<cr>`                      | Next Mark                        |
+| `<leader>mk`      | `:lua require("markit").prev()<cr>`                      | Previous Mark                    |
+| `<leader>mP`      | `:lua require("markit").preview()<cr>`                   | Preview Mark                     |
+| `<leader>md`      | `:lua require("markit").delete_line()<cr>`               | Delete Marks In Line             |
+| `<leader>mD`      | `:lua require("markit").delete_buf()<cr>`                | Delete Marks In Buffer           |
+| `<leader>mX`      | `:lua require("markit").delete()<cr>`                    | Delete Mark (Interactive)        |
+| `<leader>mb`      | `:lua require("markit").bookmarks_list_all()<cr>`        | All Bookmarks                    |
+| `<leader>mx`      | `:lua require("markit").delete_bookmark()<cr>`           | Delete Bookmark at Cursor        |
+| `<leader>ma`      | `:lua require("markit").annotate()<cr>`                  | Annotate Bookmark                |
+| `<leader>ml`      | `:lua require("markit").next_bookmark()<cr>`             | Next Bookmark                    |
+| `<leader>mh`      | `:lua require("markit").prev_bookmark()<cr>`             | Previous Bookmark                |
+| `<leader>mv`      | `:lua require("markit").toggle_signs()<cr>`              | Toggle Signs                     |
+| `<leader>mqm`     | `:MarksQFListAll<cr>`                                    | All Marks → QuickFix             |
+| `<leader>mqb`     | `:BookmarksQFListAll<cr>`                                | All Bookmarks → QuickFix         |
+| `<leader>mqM`     | `:MarksQFListBuf<cr>`                                    | Buffer Marks → QuickFix          |
+| `<leader>mqg`     | `:MarksQFListGlobal<cr>`                                 | Global Marks → QuickFix          |
+| `<leader>m[0-9]`  | `:lua require("markit").toggle_bookmark[0-9]()<cr>`      | Toggle Group [0-9] Bookmark      |
+| `<leader>mn[0-9]` | `:lua require("markit").next_bookmark[0-9]()<cr>`        | Next Group [0-9] Bookmark        |
+| `<leader>mp[0-9]` | `:lua require("markit").prev_bookmark[0-9]()<cr>`        | Previous Group [0-9] Bookmark    |
+| `<leader>mg[0-9]` | `:lua require("markit").bookmarks_list_group([0-9])<cr>` | Group [0-9] Bookmarks            |
+| `<leader>mq[0-9]` | `:BookmarksQFList [0-9]<cr>`                             | Group [0-9] Bookmarks → QuickFix |
+
+I recommend customizing these keybindings based on your preferences.
 
 See `:help markit` for more information.
 
@@ -282,9 +288,9 @@ The picker will show a preview of the file content around the marked line and al
 ### ✅ To-Do
 
 - [x] PickMe.nvim integration for multiple picker backends
-- [ ] Custom notes for bookmarks
-- [ ] Export bookmarks as markdown
 - [ ] Enhanced preview functionality
+- [ ] Custom notes for bookmarks
+- [ ] Export bookmarks as md - like a trace report with links
 
 ## ⛅ Behind The Code
 
