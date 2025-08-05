@@ -1,68 +1,6 @@
 local M = {}
 
-M.default_mappings = {
-    set = 'm',
-    set_next = 'm,',
-    toggle = 'm;',
-    toggle_mark = 'M',
-    next = 'm]',
-    prev = 'm[',
-    preview = 'm:',
-    next_bookmark = 'm}',
-    prev_bookmark = 'm{',
-    delete = 'dm',
-    delete_line = 'dm-',
-    delete_bookmark = 'dm=',
-    delete_buf = 'dm<space>',
-}
 
-local function apply_user_mappings(config, mappings)
-    if not config.mappings then
-        return mappings
-    end
-
-    local result = vim.deepcopy(mappings)
-    for cmd, key in pairs(config.mappings) do
-        if key ~= false then
-            result[cmd] = key
-        else
-            result[cmd] = nil
-        end
-    end
-    return result
-end
-
-local function apply_original_mappings(mappings)
-    for cmd, key in pairs(mappings) do
-        if key then
-            vim.api.nvim_set_keymap('n', key, '', {
-                callback = function()
-                    require('markit')[cmd]()
-                end,
-                desc = 'markit: ' .. cmd:gsub('_', ' '),
-                noremap = true,
-                silent = true,
-            })
-        end
-    end
-end
-
-local function setup_mappings(config)
-    local mappings = {}
-
-    if config.default_mappings then
-        mappings = M.default_mappings
-        for i, _ in ipairs(config.bookmarks) do
-            local group_index = i - 1
-            M.default_mappings['set_bookmark' .. group_index] = 'm' .. tostring(group_index)
-            M.default_mappings['delete_bookmark' .. group_index] = 'dm' .. tostring(group_index)
-        end
-    end
-
-    mappings = apply_user_mappings(config, mappings)
-
-    apply_original_mappings(mappings)
-end
 
 local function setup_default_keybindings(config)
     local mappings = {
@@ -126,6 +64,12 @@ local function setup_default_keybindings(config)
             string.format('<leader>mq%d', group_index),
             string.format(':BookmarksQFList %d<cr>', group_index),
             string.format('Group %d Bookmarks → QuickFix', group_index),
+        })
+
+        table.insert(mappings, {
+            string.format('<leader>mc%d', group_index),
+            string.format(':lua require("markit").delete_bookmark%d()<cr>', group_index),
+            string.format('Clear Group %d Bookmarks', group_index),
         })
     end
 
@@ -216,7 +160,6 @@ end
 
 function M.setup(config)
     setup_commands()
-    setup_mappings(config)
     if config.add_default_keybindings then
         setup_default_keybindings(config)
     end
