@@ -179,7 +179,6 @@ local function get_file_metadata(filepath)
     local mtime = stat.mtime.sec
     local formatted_time = os.date('%Y-%m-%d %H:%M', mtime)
 
-    -- Format file size
     local function format_size(bytes)
         if bytes < 1024 then
             return bytes .. ' B'
@@ -236,6 +235,7 @@ local function generate_preview(entry)
     -- File header with metadata
     local file_icon, _ = get_filetype_icon(entry.path)
     local rel_path = vim.fn.fnamemodify(entry.path, ':.')
+    local filetype = vim.filetype.match({ filename = entry.path }) or 'text'
 
     table.insert(lines, string.format('%s %s', file_icon, rel_path))
     table.insert(lines, string.rep('─', separator_width))
@@ -250,35 +250,26 @@ local function generate_preview(entry)
     end
 
     table.insert(lines, string.format('Location: Line %d, Column %d', target_line, entry.col or 1))
-
     table.insert(lines, '')
     table.insert(lines, string.format('Content (Lines %d-%d of %d):', start_line, end_line, total_lines))
-
     table.insert(lines, string.rep('─', separator_width))
     table.insert(lines, '')
 
-    -- Add line numbers and content with enhanced formatting
+    table.insert(lines, '```' .. filetype)
     local max_line_width = string.len(tostring(end_line))
-
     for i = start_line, end_line do
         local line_content = file_lines[i] or ''
         local is_target = (i == target_line)
-
         local line_num_str = string.format('%' .. max_line_width .. 'd', i)
-
-        -- Mark target line specially
         local prefix = is_target and '' or ' '
-
         local line_display = string.format('%s%s│ %s', prefix, line_num_str, line_content)
-
         table.insert(lines, line_display)
-
         if is_target and i < end_line then
             table.insert(lines, string.rep(' ', max_line_width + 6) .. '│')
         end
     end
+    table.insert(lines, '```')
 
-    -- Add navigation hint
     table.insert(lines, '')
     table.insert(lines, string.rep('─', separator_width))
     table.insert(
@@ -308,7 +299,7 @@ local function handle_selection(prompt_bufnr, selection)
 
     if entry.lnum then
         vim.api.nvim_win_set_cursor(0, { entry.lnum, (entry.col or 1) - 1 })
-        vim.cmd('normal! zz') -- Center the line
+        vim.cmd('normal! zz')
     end
 end
 
@@ -325,6 +316,7 @@ function M.marks_list_buf(mark_state)
             title = 'Buffer Marks',
             entry_maker = marks_entry_maker,
             preview_generator = generate_preview,
+            preview_ft = 'markdown',
             selection_handler = handle_selection,
         })
     end)
@@ -343,6 +335,7 @@ function M.marks_list_all(mark_state)
             title = 'All Marks',
             entry_maker = marks_entry_maker,
             preview_generator = generate_preview,
+            preview_ft = 'markdown',
             selection_handler = handle_selection,
         })
     end)
@@ -361,6 +354,7 @@ function M.bookmarks_list_all(bookmark_state)
             title = 'All Bookmarks',
             entry_maker = bookmarks_entry_maker,
             preview_generator = generate_preview,
+            preview_ft = 'markdown',
             selection_handler = handle_selection,
         })
     end)
@@ -379,6 +373,7 @@ function M.bookmarks_list_group(bookmark_state, group_nr)
             title = 'Bookmark Group ' .. group_nr,
             entry_maker = bookmarks_entry_maker,
             preview_generator = generate_preview,
+            preview_ft = 'markdown',
             selection_handler = handle_selection,
         })
     end)
