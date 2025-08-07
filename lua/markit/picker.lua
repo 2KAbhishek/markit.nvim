@@ -207,80 +207,84 @@ local function generate_preview(entry)
     end
 
     local file_exists = vim.fn.filereadable(entry.path) == 1
-
     if not file_exists then
         return string.format(' File Not Found\nPath: %s', entry.path)
     end
 
     local separator_width = 120
+    local context_before = 10
+    local context_after = 20
+
     local lines = {}
     local metadata = get_file_metadata(entry.path)
 
-    -- Read file content
     local file_lines = vim.fn.readfile(entry.path)
     local total_lines = #file_lines
     local target_line = entry.lnum or 1
 
-    -- Ensure target line is valid
     if target_line > total_lines then
         target_line = total_lines
     end
 
-    -- Enhanced context calculation
-    local context_before = 8
-    local context_after = 8
     local start_line = math.max(1, target_line - context_before)
     local end_line = math.min(total_lines, target_line + context_after)
 
-    -- File header with metadata
     local file_icon, _ = get_filetype_icon(entry.path)
     local rel_path = vim.fn.fnamemodify(entry.path, ':.')
     local filetype = vim.filetype.match({ filename = entry.path }) or 'text'
 
-    table.insert(lines, string.format('%s %s', file_icon, rel_path))
+    table.insert(lines, string.format('# %s %s', file_icon, rel_path))
     table.insert(lines, string.rep('─', separator_width))
 
-    -- Mark/Bookmark information
+    table.insert(
+        lines,
+        string.format('Size: %s | Modified: %s', metadata.size or 'Unknown', metadata.modified or 'Unknown')
+    )
     if entry.mark then
         local mark_icon, mark_desc = get_mark_type_info(entry.mark)
-        table.insert(lines, string.format('%sMark: %s (%s)', mark_icon, entry.mark, mark_desc))
+        table.insert(
+            lines,
+            string.format(
+                '%sMark: Ln %d, Col %d %s (%s)',
+                mark_icon,
+                target_line,
+                entry.col or 1,
+                entry.mark,
+                mark_desc
+            )
+        )
     elseif entry.group then
         local bookmark_icon, bookmark_desc = get_bookmark_info(entry.group)
-        table.insert(lines, string.format('%sBookmark: Group %d (%s)', bookmark_icon, entry.group, bookmark_desc))
+        table.insert(
+            lines,
+            string.format(
+                '%sBookmark: Ln %d, Col %d, Group %d (%s)',
+                bookmark_icon,
+                target_line,
+                entry.col or 1,
+                entry.group,
+                bookmark_desc
+            )
+        )
     end
 
-    table.insert(lines, string.format('Location: Line %d, Column %d', target_line, entry.col or 1))
-    table.insert(lines, '')
-    table.insert(lines, string.format('Content (Lines %d-%d of %d):', start_line, end_line, total_lines))
-    table.insert(lines, string.rep('─', separator_width))
     table.insert(lines, '')
 
+    table.insert(lines, string.format('Content (Lines %d-%d of %d):', start_line, end_line, total_lines))
+    table.insert(lines, string.rep('─', separator_width))
     table.insert(lines, '```' .. filetype)
     local max_line_width = string.len(tostring(end_line))
     for i = start_line, end_line do
         local line_content = file_lines[i] or ''
         local is_target = (i == target_line)
         local line_num_str = string.format('%' .. max_line_width .. 'd', i)
-        local prefix = is_target and '' or ' '
-        local line_display = string.format('%s%s│ %s', prefix, line_num_str, line_content)
+        local prefix = is_target and ' ' or ' │'
+        local line_display = string.format('%s%s %s', prefix, line_num_str, line_content)
         table.insert(lines, line_display)
-        if is_target and i < end_line then
-            table.insert(lines, string.rep(' ', max_line_width + 6) .. '│')
-        end
     end
     table.insert(lines, '```')
-
-    table.insert(lines, '')
     table.insert(lines, string.rep('─', separator_width))
-    table.insert(
-        lines,
-        string.format(
-            'Size: %s | Lines: %d | Modified: %s',
-            metadata.size or 'Unknown',
-            metadata.lines or total_lines,
-            metadata.modified or 'Unknown'
-        )
-    )
+
     return table.concat(lines, '\n')
 end
 
