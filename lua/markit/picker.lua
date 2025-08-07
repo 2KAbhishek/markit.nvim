@@ -146,13 +146,13 @@ local function bookmarks_entry_maker(bookmark_entry)
     end
 
     local display = string.format(
-        '%s %d %s %s → %s:%d',
+        '%s %d %s %s:%d → %s',
         bookmark_icon,
         bookmark_entry.group or 0,
         file_icon,
-        line_content,
         file_path,
-        bookmark_entry.lnum or 0
+        bookmark_entry.lnum or 0,
+        line_content
     )
 
     return {
