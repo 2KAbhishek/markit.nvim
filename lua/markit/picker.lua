@@ -102,6 +102,7 @@ end
 ---@param mark_entry table
 ---@return table
 local function marks_entry_maker(mark_entry)
+    local icons = require('markit.config').config.preview.icons
     local file_icon, file_color = get_filetype_icon(mark_entry.path)
     local mark_icon, mark_desc = get_mark_type_info(mark_entry.mark)
     local file_path = format_file_path(mark_entry.path, 25)
@@ -109,12 +110,13 @@ local function marks_entry_maker(mark_entry)
     local line_content = mark_entry.line or ''
 
     local display = string.format(
-        '%s %s %s %s:%d  %s',
+        '%s %s %s %s:%d %s %s',
         mark_icon,
         mark_entry.mark,
         file_icon,
         file_path,
         mark_entry.lnum or 0,
+        icons.target,
         line_content
     )
 
@@ -133,6 +135,7 @@ end
 ---@param bookmark_entry table
 ---@return table
 local function bookmarks_entry_maker(bookmark_entry)
+    local icons = require('markit.config').config.preview.icons
     local file_icon, file_color = get_filetype_icon(bookmark_entry.path)
     local bookmark_icon, bookmark_desc = get_bookmark_info(bookmark_entry.group)
     local file_path = format_file_path(bookmark_entry.path, 25)
@@ -140,12 +143,13 @@ local function bookmarks_entry_maker(bookmark_entry)
     local line_content = bookmark_entry.line or ''
 
     local display = string.format(
-        '%s %d %s %s:%d  %s',
+        '%s %s %s %s:%d %s\t %s',
         bookmark_icon,
         bookmark_entry.group or 0,
         file_icon,
         file_path,
         bookmark_entry.lnum or 0,
+        icons.target,
         line_content
     )
 
