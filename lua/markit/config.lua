@@ -5,9 +5,15 @@ local M = {}
 ---@field virt_text string : Virtual text to show at end of line
 ---@field annotate boolean : Whether to prompt for annotation when setting bookmark
 
+---@class MarkitIcons
+---@field target string
+---@field line_separator string
+---@field content_separator string
+
 ---@class MarkitPreviewOptions
 ---@field context_before integer : How many lines to show before marked line
 ---@field context_after integer : How many lines to show after marked line
+---@field icons MarkitIcons : Table of icons
 
 ---@class markit.config
 ---@field add_default_keybindings boolean : Whether to add comprehensive default keybindings
@@ -36,6 +42,11 @@ M.config = {
     preview = {
         context_before = 10,
         context_after = 20,
+        icons = {
+            target = ' ',
+            line_separator = ' │',
+            content_separator = '─',
+        },
     },
 
     cyclic = true,
