@@ -107,9 +107,6 @@ local function marks_entry_maker(mark_entry)
     local file_path = format_file_path(mark_entry.path, 25)
 
     local line_content = mark_entry.line or ''
-    if #line_content > 50 then
-        line_content = line_content:sub(1, 47) .. '...'
-    end
 
     local display = string.format(
         '%s %s %s %s:%d  %s',
@@ -141,9 +138,6 @@ local function bookmarks_entry_maker(bookmark_entry)
     local file_path = format_file_path(bookmark_entry.path, 25)
 
     local line_content = bookmark_entry.line or ''
-    if #line_content > 50 then
-        line_content = line_content:sub(1, 47) .. '...'
-    end
 
     local display = string.format(
         '%s %d %s %s:%d  %s',
