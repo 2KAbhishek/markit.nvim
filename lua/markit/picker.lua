@@ -112,7 +112,7 @@ local function marks_entry_maker(mark_entry)
     end
 
     local display = string.format(
-        '%s %s %s %s:%d → %s',
+        '%s %s %s %s:%d  %s',
         mark_icon,
         mark_entry.mark,
         file_icon,
@@ -146,7 +146,7 @@ local function bookmarks_entry_maker(bookmark_entry)
     end
 
     local display = string.format(
-        '%s %d %s %s:%d → %s',
+        '%s %d %s %s:%d  %s',
         bookmark_icon,
         bookmark_entry.group or 0,
         file_icon,
