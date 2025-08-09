@@ -6,8 +6,9 @@ local M = {}
 ---@param filepath string
 ---@return string icon, string? color
 local function get_filetype_icon(filepath)
+    local icons = require('markit.config').config.icons
     if not filepath or filepath == '' then
-        return ' ', nil
+        return icons.file, nil
     end
 
     local ext = vim.fn.fnamemodify(filepath, ':e'):lower()
@@ -21,35 +22,36 @@ local function get_filetype_icon(filepath)
         end
     end
 
-    return ' ', nil
+    return icons.file, nil
 end
 
 ---Get mark type icon and description
 ---@param mark string
 ---@return string icon, string description
 local function get_mark_type_info(mark)
+    local marks = require('markit.config').config.icons.marks
     if not mark then
-        return ' ', 'Unknown'
+        return marks.default, 'Unknown'
     end
 
     if mark:match('[a-z]') then
-        return ' ', 'Buffer Mark'
+        return marks.buffer, 'Buffer Mark'
     elseif mark:match('[A-Z]') then
-        return ' ', 'Global Mark'
+        return marks.global, 'Global Mark'
     elseif mark:match('[0-9]') then
-        return ' ', 'Numbered Mark'
+        return marks.numbered, 'Numbered Mark'
     elseif mark == "'" then
-        return ' ', 'Last Jump'
+        return marks.last_jump, 'Last Jump'
     elseif mark == '^' then
-        return ' ', 'Last Insert'
+        return marks.last_insert, 'Last Insert'
     elseif mark == '.' then
-        return ' ', 'Last Change'
+        return marks.last_change, 'Last Change'
     elseif mark == '<' then
-        return ' ', 'Visual Start'
+        return marks.visual_start, 'Visual Start'
     elseif mark == '>' then
-        return ' ', 'Visual End'
+        return marks.visual_end, 'Visual End'
     else
-        return ' ', 'Special Mark'
+        return marks.default, 'Special Mark'
     end
 end
 
@@ -62,7 +64,7 @@ local function get_bookmark_info(group_nr)
     local color = colors[group_nr + 1] or 'Default'
 
     local bookmark_config = config.bookmarks[group_nr + 1]
-    local icon = ' '
+    local icon = config.icons.default_bookmark
     if bookmark_config then
         icon = bookmark_config.sign
     end
@@ -102,7 +104,7 @@ end
 ---@param mark_entry table
 ---@return table
 local function marks_entry_maker(mark_entry)
-    local icons = require('markit.config').config.preview.icons
+    local icons = require('markit.config').config.icons
     local file_icon, file_color = get_filetype_icon(mark_entry.path)
     local mark_icon, mark_desc = get_mark_type_info(mark_entry.mark)
     local file_path = format_file_path(mark_entry.path, 25)
@@ -135,7 +137,7 @@ end
 ---@param bookmark_entry table
 ---@return table
 local function bookmarks_entry_maker(bookmark_entry)
-    local icons = require('markit.config').config.preview.icons
+    local icons = require('markit.config').config.icons
     local file_icon, file_color = get_filetype_icon(bookmark_entry.path)
     local bookmark_icon, bookmark_desc = get_bookmark_info(bookmark_entry.group)
     local file_path = format_file_path(bookmark_entry.path, 25)
@@ -200,19 +202,20 @@ end
 ---@param entry table
 ---@return string
 local function generate_preview(entry)
+    local config = require('markit.config').config
+    local icons = config.icons
     if not entry.path or entry.path == '' then
-        return ' File Not Found\nThis mark/bookmark does not have an associated file.'
+        return icons.error .. 'File Not Found\nThis mark/bookmark does not have an associated file.'
     end
 
     local file_exists = vim.fn.filereadable(entry.path) == 1
     if not file_exists then
-        return string.format(' File Not Found\nPath: %s', entry.path)
+        return string.format('%s File Not Found\nPath: %s', icons.error, entry.path)
     end
 
-    local separator_width = 200
-    local config = require('markit.config').config
     local context_after = config.preview.context_after
     local context_before = config.preview.context_before
+    local content_separator = string.rep(icons.content_separator, 240)
 
     local lines = {}
     local metadata = get_file_metadata(entry.path)
@@ -233,7 +236,7 @@ local function generate_preview(entry)
     local filetype = vim.filetype.match({ filename = entry.path }) or 'text'
 
     table.insert(lines, string.format('# %s %s', file_icon, rel_path))
-    table.insert(lines, string.rep('─', separator_width))
+    table.insert(lines, content_separator)
 
     table.insert(
         lines,
@@ -270,19 +273,19 @@ local function generate_preview(entry)
     table.insert(lines, '')
 
     table.insert(lines, string.format('Content (Lines %d-%d of %d):', start_line, end_line, total_lines))
-    table.insert(lines, string.rep('─', separator_width))
+    table.insert(lines, content_separator)
     table.insert(lines, '```' .. filetype)
     local max_line_width = string.len(tostring(end_line))
     for i = start_line, end_line do
         local line_content = file_lines[i] or ''
         local is_target = (i == target_line)
         local line_num_str = string.format('%' .. max_line_width .. 'd', i)
-        local prefix = is_target and ' ' or ' │'
+        local prefix = is_target and icons.target or icons.line_separator
         local line_display = string.format('%s%s %s', prefix, line_num_str, line_content)
         table.insert(lines, line_display)
     end
     table.insert(lines, '```')
-    table.insert(lines, string.rep('─', separator_width))
+    table.insert(lines, content_separator)
 
     return table.concat(lines, '\n')
 end
