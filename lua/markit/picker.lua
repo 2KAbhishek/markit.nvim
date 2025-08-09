@@ -211,9 +211,10 @@ local function generate_preview(entry)
         return string.format(' File Not Found\nPath: %s', entry.path)
     end
 
-    local separator_width = 120
-    local context_before = 10
-    local context_after = 20
+    local separator_width = 200
+    local config = require('markit.config').config
+    local context_after = config.preview.context_after
+    local context_before = config.preview.context_before
 
     local lines = {}
     local metadata = get_file_metadata(entry.path)

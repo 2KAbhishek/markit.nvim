@@ -5,6 +5,10 @@ local M = {}
 ---@field virt_text string : Virtual text to show at end of line
 ---@field annotate boolean : Whether to prompt for annotation when setting bookmark
 
+---@class MarkitPreviewOptions
+---@field context_before integer : How many lines to show before marked line
+---@field context_after integer : How many lines to show after marked line
+
 ---@class markit.config
 ---@field add_default_keybindings boolean : Whether to add comprehensive default keybindings
 ---@field builtin_marks table : Which builtin marks to show in sign column
@@ -16,6 +20,7 @@ local M = {}
 ---@field excluded_buftypes table : Buffer types to disable mark tracking for
 ---@field signs boolean : Whether to show signs in sign column
 ---@field bookmarks MarkitBookmark[] : Array of bookmark group configurations
+---@field preview MarkitPreviewOptions : Config options for markit preview
 M.config = {
     add_default_keybindings = true,
 
@@ -26,6 +31,11 @@ M.config = {
         upper = 15,
         builtin = 8,
         bookmark = 20,
+    },
+
+    preview = {
+        context_before = 10,
+        context_after = 20,
     },
 
     cyclic = true,
