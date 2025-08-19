@@ -11,5 +11,7 @@ vim.cmd('runtime plugin/plenary.vim')
 require('plenary.busted')
 
 package.loaded['pickme'] = {
-    custom_picker = function() return true end
+    custom_picker = function()
+        return true
+    end,
 }
