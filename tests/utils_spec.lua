@@ -60,7 +60,7 @@ describe('markit.utils', function()
     describe('validate_column', function()
         it('returns 0 for empty lines', function()
             local bufnr = vim.api.nvim_create_buf(false, true)
-            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {''})
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { '' })
 
             assert.equals(0, utils.validate_column(bufnr, 0, 5))
 
@@ -69,7 +69,7 @@ describe('markit.utils', function()
 
         it('clamps column to line length', function()
             local bufnr = vim.api.nvim_create_buf(false, true)
-            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {'1234'})
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { '1234' })
 
             assert.equals(4, utils.validate_column(bufnr, 0, 10))
             assert.equals(2, utils.validate_column(bufnr, 0, 2))
@@ -86,7 +86,7 @@ describe('markit.utils', function()
         it('validates column position', function()
             local bufnr = vim.api.nvim_create_buf(false, true)
             local ns_id = vim.api.nvim_create_namespace('test_namespace')
-            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {'1234'})
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { '1234' })
 
             local mark_id = utils.safe_set_extmark(bufnr, ns_id, 0, 10, {})
 
