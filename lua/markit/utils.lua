@@ -100,4 +100,59 @@ function M.choose_list(list_type)
     return list_fn
 end
 
+function M.is_valid_buffer(bufnr)
+    return bufnr and pcall(vim.api.nvim_buf_is_valid, bufnr) and vim.api.nvim_buf_is_valid(bufnr)
+end
+
+function M.safe_get_line(bufnr, line_nr)
+    if not M.is_valid_buffer(bufnr) then
+        return ""
+    end
+
+    local success, result = pcall(vim.api.nvim_buf_get_lines, bufnr, line_nr, line_nr + 1, true)
+    if success and result and result[1] then
+        return result[1]
+    end
+    return ""
+end
+
+function M.safe_get_buf_name(bufnr)
+    if not M.is_valid_buffer(bufnr) then
+        return ""
+    end
+
+    local success, name = pcall(vim.api.nvim_buf_get_name, bufnr)
+    if success then
+        return name
+    end
+    return ""
+end
+
+function M.validate_column(bufnr, line_nr, col)
+    local line = M.safe_get_line(bufnr, line_nr)
+    if line == "" then
+        return 0
+    end
+    return math.min(col or 0, string.len(line))
+end
+
+function M.safe_set_extmark(bufnr, ns_id, line, col, opts)
+    if not M.is_valid_buffer(bufnr) then
+        return -1
+    end
+
+    local max_lines = vim.api.nvim_buf_line_count(bufnr)
+    if line < 0 or line >= max_lines then
+        return -1
+    end
+
+    local valid_col = M.validate_column(bufnr, line, col)
+
+    local success, id = pcall(vim.api.nvim_buf_set_extmark, bufnr, ns_id, line, valid_col, opts or {})
+    if success then
+        return id
+    end
+    return -1
+end
+
 return M
