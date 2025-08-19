@@ -29,23 +29,6 @@ local function group_under_cursor(groups, bufnr, pos)
     return nil
 end
 
-local function flatten(marks)
-    local ret = {}
-
-    for _, buf_marks in pairs(marks) do
-        for _, mark in pairs(buf_marks) do
-            table.insert(ret, mark)
-        end
-    end
-
-    local function comparator(x, y)
-        return (x.buf == y.buf and x.line < y.line) or (x.buf < y.buf)
-    end
-
-    table.sort(ret, comparator)
-    return ret
-end
-
 function Bookmarks:init(group_nr)
     local ns = a.nvim_create_namespace('Bookmarks' .. group_nr)
     local sign = self.signs[group_nr]
@@ -142,18 +125,26 @@ function Bookmarks:deserialize(data)
     end
 
     for group_key, group_data in pairs(data) do
-        -- Convert string key back to number
         local group_nr = tonumber(group_key)
         if not self.groups[group_nr] then
             self:init(group_nr)
         end
 
         for filename, marks in pairs(group_data.marks) do
-            local bufnr = vim.fn.bufadd(filename)
-            -- Ensure buffer is loaded before adding marks
-            vim.fn.bufload(bufnr)
-            for _, mark in ipairs(marks) do
-                self:place_mark(group_nr, bufnr, { mark.line, mark.col })
+            local success, bufnr = pcall(vim.fn.bufadd, filename)
+            if success and bufnr and bufnr > 0 then
+                pcall(vim.fn.bufload, bufnr)
+
+                if utils.is_valid_buffer(bufnr) then
+                    for _, mark in ipairs(marks) do
+                        if type(mark.line) == 'number' and mark.line > 0 then
+                            local col = type(mark.col) == 'number' and mark.col or 0
+                            pcall(function()
+                                self:place_mark(group_nr, bufnr, { mark.line, col })
+                            end)
+                        end
+                    end
+                end
             end
         end
     end
@@ -185,7 +176,15 @@ function Bookmarks:place_mark(group_nr, bufnr, pos)
         opts.virt_text_pos = 'eol'
     end
 
-    local extmark_id = a.nvim_buf_set_extmark(bufnr, group.ns, pos[1] - 1, pos[2], opts)
+    if not utils.is_valid_buffer(bufnr) then
+        return
+    end
+
+    local extmark_id = utils.safe_set_extmark(bufnr, group.ns, pos[1] - 1, pos[2], opts)
+
+    if extmark_id < 0 then
+        return
+    end
 
     data.extmark_id = extmark_id
 
