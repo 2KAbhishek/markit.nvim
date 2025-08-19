@@ -241,6 +241,7 @@ function M.setup(opts)
     assign_defaults(config_module.config)
     add_bookmark_commands(config_module.config.bookmarks)
     commands.setup(config_module.config)
+    utils.setup_cache_handlers()
 end
 
 return M

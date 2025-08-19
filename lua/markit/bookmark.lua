@@ -47,19 +47,16 @@ function Bookmarks:get_bookmarks_dir()
 end
 
 function Bookmarks:get_root_dir()
-    -- Try to get git root first
     local git_dir = vim.fn.system('git rev-parse --show-toplevel 2>/dev/null'):gsub('\n', '')
     if vim.v.shell_error == 0 and git_dir ~= '' then
         return git_dir
     end
 
-    -- Fallback to current working directory
     return vim.fn.getcwd()
 end
 
 function Bookmarks:get_bookmark_file()
     local root = self:get_root_dir()
-    -- Create a valid filename from the root path
     local filename = root:gsub('[^%w_%-]', '_')
     return Path:new(self:get_bookmarks_dir()):joinpath(filename .. '.json')
 end
@@ -94,7 +91,6 @@ end
 function Bookmarks:serialize()
     local data = {}
     for group_nr, group in pairs(self.groups) do
-        -- Convert numeric keys to strings to avoid sparse array issues
         local group_key = tostring(group_nr)
         data[group_key] = {
             marks = {},
@@ -103,10 +99,8 @@ function Bookmarks:serialize()
         }
         for bufnr, buffer_marks in pairs(group.marks) do
             local filename = vim.api.nvim_buf_get_name(bufnr)
-            -- Only save marks from named buffers
             if filename and filename ~= '' then
                 data[group_key].marks[filename] = {}
-                -- Convert the marks table to an array
                 for _, mark in pairs(buffer_marks) do
                     table.insert(data[group_key].marks[filename], {
                         line = mark.line,
@@ -152,15 +146,18 @@ end
 
 function Bookmarks:place_mark(group_nr, bufnr, pos)
     bufnr = bufnr or a.nvim_get_current_buf()
-    local group = self.groups[group_nr]
 
+    if not utils.is_valid_buffer(bufnr) then
+        return
+    end
+
+    local group = self.groups[group_nr]
     if not group then
         self:init(group_nr)
         group = self.groups[group_nr]
     end
 
-    pos = pos or a.nvim_win_get_cursor(0)
-
+    pos = pos or utils.safe_get_current_cursor()
     local data = { buf = bufnr, line = pos[1], col = pos[2], sign_id = -1 }
 
     local display_signs = utils.option_nil(self.opt.buf_signs[bufnr], self.opt.signs)
@@ -192,7 +189,6 @@ function Bookmarks:place_mark(group_nr, bufnr, pos)
         group.marks[bufnr] = {}
     end
 
-    -- Generate a unique key for this mark
     local mark_key = string.format('%d_%d', pos[1], #group.marks[bufnr] + 1)
     group.marks[bufnr][mark_key] = data
 
@@ -212,7 +208,6 @@ function Bookmarks:toggle_mark(group_nr, bufnr)
 
     local pos = a.nvim_win_get_cursor(0)
 
-    -- Check if there's a mark at current line
     local found_mark = nil
     if group.marks[bufnr] then
         for key, mark in pairs(group.marks[bufnr]) do
@@ -254,14 +249,18 @@ end
 
 function Bookmarks:delete_mark_cursor()
     local bufnr = a.nvim_get_current_buf()
-    local pos = a.nvim_win_get_cursor(0)
+
+    if not utils.is_valid_buffer(bufnr) then
+        return
+    end
+
+    local pos = utils.safe_get_current_cursor()
 
     local group_nr = group_under_cursor(self.groups, bufnr, pos)
     if not group_nr then
         return
     end
 
-    -- Find the mark key for the current line
     local found_mark = nil
     if self.groups[group_nr].marks[bufnr] then
         for key, mark in pairs(self.groups[group_nr].marks[bufnr]) do
@@ -311,7 +310,6 @@ local function find_mark(items, bufnr, pos, next_mode)
         return nil
     end
 
-    -- Sort by buffer and line number
     table.sort(items, function(a, b)
         if a.bufnr == b.bufnr then
             if next_mode then
@@ -327,7 +325,6 @@ local function find_mark(items, bufnr, pos, next_mode)
         end
     end)
 
-    -- Find the next/prev mark
     local found_mark = nil
     for _, mark in ipairs(items) do
         if next_mode then
@@ -343,7 +340,6 @@ local function find_mark(items, bufnr, pos, next_mode)
         end
     end
 
-    -- Wrap around if no mark found
     return found_mark or items[1]
 end
 
@@ -351,12 +347,10 @@ function Bookmarks:navigate(group_nr, next_mode)
     local bufnr = a.nvim_get_current_buf()
     local pos = a.nvim_win_get_cursor(0)
 
-    -- If no group specified and not on a mark, use the first available group
     if not group_nr then
         group_nr = get_group_nr_or_first(self, bufnr, pos)
     end
 
-    -- Get all marks for this group from all bookmark files
     local items = self:get_list({ group = group_nr })
     local target_mark = find_mark(items, bufnr, pos, next_mode)
 
@@ -366,7 +360,6 @@ function Bookmarks:navigate(group_nr, next_mode)
 
     if target_mark.bufnr ~= bufnr then
         vim.cmd('silent b' .. target_mark.bufnr)
-        -- Ensure marks are loaded in the new buffer
         self:load()
     end
     a.nvim_win_set_cursor(0, { target_mark.lnum, target_mark.col - 1 })
@@ -424,10 +417,6 @@ end
 function Bookmarks:refresh()
     local bufnr = a.nvim_get_current_buf()
 
-    -- if we delete and undo really quickly, the extmark's position will be
-    -- the same, but the sign will no longer be there. so clear and restore all
-    -- signs.
-
     local buf_marks
     local display_signs
     utils.remove_buf_signs(bufnr, 'BookmarkSigns')
@@ -451,7 +440,7 @@ function Bookmarks:refresh()
     end
 end
 
--- Helper functions
+-- Helper function to get all bookmark files
 local function get_bookmark_files(self, project_only)
     local bookmarks_dir = self:get_bookmarks_dir()
     if project_only then
@@ -501,20 +490,17 @@ function Bookmarks:get_list(opts)
     opts = opts or {}
     local items = {}
 
-    -- Get bookmark files based on project_only flag
     local files = get_bookmark_files(self, opts.project_only)
 
     for _, file in ipairs(files) do
         local data = read_bookmark_file(file)
         if data then
             if opts.group then
-                -- Get specific group
                 if data[tostring(opts.group)] then
                     local group_data = data[tostring(opts.group)]
                     items = vim.list_extend(items, process_group_marks(group_data, opts.group))
                 end
             else
-                -- Get all groups
                 for group_key, group_data in pairs(data) do
                     local group_nr = tonumber(group_key)
                     items = vim.list_extend(items, process_group_marks(group_data, group_nr))
@@ -536,14 +522,18 @@ function Bookmarks:to_list(list_type, group_nr)
 
     local items = {}
     for bufnr, buffer_marks in pairs(self.groups[group_nr].marks) do
-        for mark_key, mark in pairs(buffer_marks) do
-            local text = a.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, true)[1]
-            table.insert(items, {
-                bufnr = bufnr,
-                lnum = mark.line,
-                col = mark.col + 1,
-                text = text,
-            })
+        if utils.is_valid_buffer(bufnr) then
+            for mark_key, mark in pairs(buffer_marks) do
+                local text = utils.safe_get_line(bufnr, mark.line - 1)
+                table.insert(items, {
+                    bufnr = bufnr,
+                    lnum = mark.line,
+                    col = mark.col + 1,
+                    text = text,
+                })
+            end
+        else
+            self.groups[group_nr].marks[bufnr] = nil
         end
     end
 
@@ -555,17 +545,32 @@ function Bookmarks:all_to_list(list_type)
     local list_fn = utils.choose_list(list_type)
 
     local items = {}
+    local invalid_buffers = {}
+
     for group_nr, group in pairs(self.groups) do
         for bufnr, buffer_marks in pairs(group.marks) do
-            for mark_key, mark in pairs(buffer_marks) do
-                local text = a.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, true)[1]
-                table.insert(items, {
-                    bufnr = bufnr,
-                    lnum = mark.line,
-                    col = mark.col + 1,
-                    text = 'bookmark group ' .. group_nr .. ': ' .. text,
-                })
+            if utils.is_valid_buffer(bufnr) then
+                for mark_key, mark in pairs(buffer_marks) do
+                    local text = utils.safe_get_line(bufnr, mark.line - 1)
+                    table.insert(items, {
+                        bufnr = bufnr,
+                        lnum = mark.line,
+                        col = mark.col + 1,
+                        text = 'bookmark group ' .. group_nr .. ': ' .. text,
+                    })
+                end
+            else
+                if not invalid_buffers[group_nr] then
+                    invalid_buffers[group_nr] = {}
+                end
+                table.insert(invalid_buffers[group_nr], bufnr)
             end
+        end
+    end
+
+    for group_nr, bufnrs in pairs(invalid_buffers) do
+        for _, bufnr in ipairs(bufnrs) do
+            self.groups[group_nr].marks[bufnr] = nil
         end
     end
 
