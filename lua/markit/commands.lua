@@ -1,7 +1,5 @@
 local M = {}
 
-
-
 local function setup_default_keybindings(config)
     local mappings = {
         { '<leader>mm', ':lua require("markit").marks_list_all()<cr>', 'All Marks' },
