@@ -9,3 +9,7 @@ vim.opt.rtp:append(plenary_dir)
 
 vim.cmd('runtime plugin/plenary.vim')
 require('plenary.busted')
+
+package.loaded['pickme'] = {
+    custom_picker = function() return true end
+}
