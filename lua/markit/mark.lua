@@ -307,17 +307,22 @@ end
 function Mark:get_all_list()
     local items = {}
     for bufnr, buffer_state in pairs(self.buffers) do
-        for mark, data in pairs(buffer_state.placed_marks) do
-            local text = a.nvim_buf_get_lines(bufnr, data.line - 1, data.line, true)[1]
-            local path = vim.api.nvim_buf_get_name(bufnr)
-            table.insert(items, {
-                bufnr = bufnr,
-                lnum = data.line,
-                col = data.col + 1,
-                mark = mark,
-                line = vim.trim(text),
-                path = path,
-            })
+        if utils.is_valid_buffer(bufnr) then
+            for mark, data in pairs(buffer_state.placed_marks) do
+                local text = utils.safe_get_line(bufnr, data.line - 1)
+                local path = utils.safe_get_buf_name(bufnr)
+
+                table.insert(items, {
+                    bufnr = bufnr,
+                    lnum = data.line,
+                    col = data.col + 1,
+                    mark = mark,
+                    line = vim.trim(text),
+                    path = path,
+                })
+            end
+        else
+            self.buffers[bufnr] = nil
         end
     end
     return items
@@ -452,7 +457,6 @@ function Mark:refresh(bufnr, force)
             self:register_mark(char, pos[2], pos[3], bufnr)
         end
     end
-    return
 end
 
 function Mark:add_sign(bufnr, text, line, id)
