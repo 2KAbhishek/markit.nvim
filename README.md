@@ -211,11 +211,11 @@ The `builtin_marks` option allows you to track and show vim's builtin marks in t
 
 Supported builtin marks:
 
-- `"'"` - Last jump
-- `"^"` - Last insertion stop position
-- `"."` - Last change
-- `"<"` - Start of last visual selection
-- `">"` - End of last visual selection
+- `'` - Last jump
+- `^` - Last insertion stop position
+- `.` - Last change
+- `<` - Start of last visual selection
+- `>` - End of last visual selection
 
 ### Bookmarks
 
