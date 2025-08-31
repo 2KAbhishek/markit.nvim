@@ -143,7 +143,9 @@ describe('markit.bookmark', function()
             it('shows warning when not in git repository', function()
                 local original_notify = vim.notify
                 local notify_spy = spy.on(vim, 'notify')
-                utils.get_git_root = function() return nil end
+                utils.get_git_root = function()
+                    return nil
+                end
 
                 bookmark_state:project_to_list()
 
@@ -152,7 +154,6 @@ describe('markit.bookmark', function()
                 notify_spy:revert()
                 vim.notify = original_notify
             end)
-
         end)
     end)
 end)

@@ -462,8 +462,10 @@ local function process_group_marks(group_data, group_nr, buffer_filter, project_
             local bufnr = vim.fn.bufadd(filepath)
             vim.fn.bufload(bufnr)
 
-            if (not buffer_filter or bufnr == buffer_filter) and
-               (not project_filter or (filepath:sub(1, #project_filter) == project_filter)) then
+            if
+                (not buffer_filter or bufnr == buffer_filter)
+                and (not project_filter or (filepath:sub(1, #project_filter) == project_filter))
+            then
                 for _, mark in ipairs(marks) do
                     local text = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)[1] or ''
                     table.insert(items, {
