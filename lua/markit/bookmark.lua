@@ -431,7 +431,7 @@ function Bookmarks:refresh()
     end
 end
 
--- Helper function to get all bookmark files
+---Helper function to get all bookmark files
 local function get_bookmark_files(self, project_only)
     local bookmarks_dir = self:get_bookmarks_dir()
     if project_only then
@@ -454,23 +454,27 @@ local function read_bookmark_file(file)
     return ok and data or nil
 end
 
--- Helper function to process marks from a group
-local function process_group_marks(group_data, group_nr)
+---Helper function to process marks from a group
+local function process_group_marks(group_data, group_nr, buffer_filter, project_filter)
     local items = {}
     for filepath, marks in pairs(group_data.marks) do
         if vim.fn.filereadable(filepath) == 1 then
             local bufnr = vim.fn.bufadd(filepath)
             vim.fn.bufload(bufnr)
-            for _, mark in ipairs(marks) do
-                local text = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)[1] or ''
-                table.insert(items, {
-                    bufnr = bufnr,
-                    lnum = mark.line,
-                    col = mark.col + 1,
-                    group = group_nr,
-                    line = vim.trim(text),
-                    path = filepath,
-                })
+
+            if (not buffer_filter or bufnr == buffer_filter) and
+               (not project_filter or (filepath:sub(1, #project_filter) == project_filter)) then
+                for _, mark in ipairs(marks) do
+                    local text = vim.api.nvim_buf_get_lines(bufnr, mark.line - 1, mark.line, false)[1] or ''
+                    table.insert(items, {
+                        bufnr = bufnr,
+                        lnum = mark.line,
+                        col = mark.col + 1,
+                        group = group_nr,
+                        line = vim.trim(text),
+                        path = filepath,
+                    })
+                end
             end
         end
     end
@@ -483,7 +487,7 @@ function Bookmarks:get_list(opts)
 
     local files = get_bookmark_files(self, opts.project_only)
     local buffer_filter = opts.buffer
-    local project_filter = opts.project and (vim.fn.getcwd() .. '/') or nil
+    local project_filter = opts.project and require('markit.utils').get_git_root() or nil
 
     for _, file in ipairs(files) do
         local data = read_bookmark_file(file)
@@ -575,13 +579,18 @@ function Bookmarks:project_to_list(list_type)
     list_type = list_type or 'loclist'
     local list_fn = utils.choose_list(list_type)
     local items = {}
-    local cwd = vim.fn.getcwd() .. '/'
+    local git_root = utils.get_git_root()
+
+    if not git_root then
+        vim.notify('Not in a git repository', vim.log.levels.WARN)
+        return
+    end
 
     for group_nr, group in pairs(self.groups) do
         for bufnr, buffer_marks in pairs(group.marks) do
             if utils.is_valid_buffer(bufnr) then
                 local filepath = vim.api.nvim_buf_get_name(bufnr)
-                if filepath:sub(1, #cwd) == cwd then
+                if filepath:sub(1, #git_root) == git_root then
                     for mark_key, mark in pairs(buffer_marks) do
                         local text = utils.safe_get_line(bufnr, mark.line - 1)
                         table.insert(items, {
