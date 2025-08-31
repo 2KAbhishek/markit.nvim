@@ -305,10 +305,8 @@ WHAT’S NEXT                                           *markit-what’s-next*
 
 TO-DO ~
 
-- PickMe.nvim integration for multiple picker backends
-- Enhanced preview functionality
-- Custom notes for bookmarks
-- Export bookmarks as md - like a trace report with links
+- All marks are not showing up on `Markit mark list all`
+- When jumping to bookmarked files, treesitter highlighting is not applied
 
 
 BEHIND THE CODE                                       *markit-behind-the-code*
