@@ -13,7 +13,6 @@ function Mark:register_mark(mark, line, col, bufnr)
     end
 
     if buffer.placed_marks[mark] then
-        -- mark already exists: remove it first
         self:delete_mark(mark, false)
     end
 
@@ -107,7 +106,6 @@ function Mark:delete_mark(mark, clear)
         vim.cmd('wshada!')
     end
 
-    -- only adjust lowest_available_mark if it is lowercase
     if not utils.is_lower(mark) then
         return
     end
@@ -125,7 +123,6 @@ function Mark:delete_line_marks()
         return
     end
 
-    -- delete_mark modifies the table, so make a copy
     local copy = vim.tbl_values(self.buffers[bufnr].marks_by_line[pos[1]])
     for _, mark in pairs(copy) do
         self:delete_mark(mark)
@@ -180,6 +177,52 @@ function Mark:delete_buf_marks(clear)
     if clear then
         vim.cmd('delmarks!')
     end
+end
+
+function Mark:delete_project_marks()
+    local git_root = utils.get_git_root()
+    if not git_root then
+        vim.notify('Not in a git repository', vim.log.levels.WARN)
+        return
+    end
+
+    for bufnr, buffer_state in pairs(self.buffers) do
+        if utils.is_valid_buffer(bufnr) then
+            local filepath = utils.safe_get_buf_name(bufnr)
+
+            if filepath:sub(1, #git_root) == git_root then
+                self.buffers[bufnr] = {
+                    placed_marks = {},
+                    marks_by_line = {},
+                    lowest_available_mark = 'a',
+                }
+                utils.remove_buf_signs(bufnr)
+
+                vim.api.nvim_buf_call(bufnr, function()
+                    vim.cmd('delmarks!')
+                end)
+            end
+        end
+    end
+end
+
+function Mark:delete_all_marks()
+    for bufnr, buffer_state in pairs(self.buffers) do
+        if utils.is_valid_buffer(bufnr) then
+            self.buffers[bufnr] = {
+                placed_marks = {},
+                marks_by_line = {},
+                lowest_available_mark = 'a',
+            }
+            utils.remove_buf_signs(bufnr)
+
+            vim.api.nvim_buf_call(bufnr, function()
+                vim.cmd('delmarks!')
+            end)
+        end
+    end
+
+    vim.cmd('delmarks A-Z0-9')
 end
 
 function Mark:next_mark()
@@ -250,7 +293,6 @@ function Mark.preview_mark()
         mark = string.char(mark)
     end
 
-    -- clear cmdline
     vim.defer_fn(function()
         a.nvim_echo({ { '' } }, false, {})
     end, 100)
