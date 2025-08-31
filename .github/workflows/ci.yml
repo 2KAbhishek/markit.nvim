@@ -29,5 +29,9 @@ jobs:
           neovim: true
           version: ${{ matrix.nvim-versions }}
 
+      - name: install plenary.nvim
+        run: |
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ~/.local/share/nvim/site/pack/vendor/start/plenary.nvim
+
       - name: run tests
         run: make test
