@@ -102,4 +102,92 @@ describe('markit.utils', function()
             vim.api.nvim_buf_delete(bufnr, { force = true })
         end)
     end)
+
+    describe('get_git_root', function()
+        local original_popen
+
+        before_each(function()
+            original_popen = io.popen
+        end)
+
+        after_each(function()
+            io.popen = original_popen
+        end)
+
+        it('returns git root with trailing slash', function()
+            local mock_handle = {
+                read = function() return '/home/user/project' end,
+                close = function() return true end
+            }
+            io.popen = function(cmd)
+                assert.equals('git rev-parse --show-toplevel 2>/dev/null', cmd)
+                return mock_handle
+            end
+
+            local result = utils.get_git_root()
+            assert.equals('/home/user/project/', result)
+        end)
+
+        it('preserves existing trailing slash', function()
+            local mock_handle = {
+                read = function() return '/home/user/project/' end,
+                close = function() return true end
+            }
+            io.popen = function() return mock_handle end
+
+            local result = utils.get_git_root()
+            assert.equals('/home/user/project/', result)
+        end)
+
+        it('handles newlines in git output', function()
+            local mock_handle = {
+                read = function() return '/home/user/project\n' end,
+                close = function() return true end
+            }
+            io.popen = function() return mock_handle end
+
+            local result = utils.get_git_root()
+            assert.equals('/home/user/project/', result)
+        end)
+
+        it('returns nil when not in git repository', function()
+            local mock_handle = {
+                read = function() return '' end,
+                close = function() return false end
+            }
+            io.popen = function() return mock_handle end
+
+            local result = utils.get_git_root()
+            assert.is_nil(result)
+        end)
+
+        it('returns nil when git command fails', function()
+            local mock_handle = {
+                read = function() return nil end,
+                close = function() return false end
+            }
+            io.popen = function() return mock_handle end
+
+            local result = utils.get_git_root()
+            assert.is_nil(result)
+        end)
+
+        it('returns nil when popen fails', function()
+            io.popen = function() return nil end
+
+            local result = utils.get_git_root()
+            assert.is_nil(result)
+        end)
+
+        it('handles empty git output', function()
+            local mock_handle = {
+                read = function() return '' end,
+                close = function() return true end
+            }
+            io.popen = function() return mock_handle end
+
+            local result = utils.get_git_root()
+            assert.is_nil(result)
+        end)
+    end)
 end)
