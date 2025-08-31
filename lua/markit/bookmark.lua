@@ -482,6 +482,8 @@ function Bookmarks:get_list(opts)
     local items = {}
 
     local files = get_bookmark_files(self, opts.project_only)
+    local buffer_filter = opts.buffer
+    local project_filter = opts.project and (vim.fn.getcwd() .. '/') or nil
 
     for _, file in ipairs(files) do
         local data = read_bookmark_file(file)
@@ -489,18 +491,32 @@ function Bookmarks:get_list(opts)
             if opts.group then
                 if data[tostring(opts.group)] then
                     local group_data = data[tostring(opts.group)]
-                    items = vim.list_extend(items, process_group_marks(group_data, opts.group))
+                    items = vim.list_extend(
+                        items,
+                        process_group_marks(group_data, opts.group, buffer_filter, project_filter)
+                    )
                 end
             else
                 for group_key, group_data in pairs(data) do
                     local group_nr = tonumber(group_key)
-                    items = vim.list_extend(items, process_group_marks(group_data, group_nr))
+                    items =
+                        vim.list_extend(items, process_group_marks(group_data, group_nr, buffer_filter, project_filter))
                 end
             end
         end
     end
 
     return items
+end
+
+function Bookmarks:get_buffer_list(bufnr)
+    self:refresh()
+    return self:get_list({ buffer = bufnr })
+end
+
+function Bookmarks:get_project_list(cwd)
+    self:refresh()
+    return self:get_list({ project = true })
 end
 
 function Bookmarks:to_list(list_type, group_nr)
@@ -525,6 +541,60 @@ function Bookmarks:to_list(list_type, group_nr)
             end
         else
             self.groups[group_nr].marks[bufnr] = nil
+        end
+    end
+
+    list_fn(items, 'r')
+end
+
+function Bookmarks:buffer_to_list(list_type, bufnr)
+    list_type = list_type or 'loclist'
+    bufnr = bufnr or a.nvim_get_current_buf()
+
+    local list_fn = utils.choose_list(list_type)
+    local items = {}
+
+    for group_nr, group in pairs(self.groups) do
+        if group.marks[bufnr] then
+            for mark_key, mark in pairs(group.marks[bufnr]) do
+                local text = utils.safe_get_line(bufnr, mark.line - 1)
+                table.insert(items, {
+                    bufnr = bufnr,
+                    lnum = mark.line,
+                    col = mark.col + 1,
+                    text = 'bookmark ' .. group_nr .. ': ' .. text,
+                })
+            end
+        end
+    end
+
+    list_fn(items, 'r')
+end
+
+function Bookmarks:project_to_list(list_type)
+    list_type = list_type or 'loclist'
+    local list_fn = utils.choose_list(list_type)
+    local items = {}
+    local cwd = vim.fn.getcwd() .. '/'
+
+    for group_nr, group in pairs(self.groups) do
+        for bufnr, buffer_marks in pairs(group.marks) do
+            if utils.is_valid_buffer(bufnr) then
+                local filepath = vim.api.nvim_buf_get_name(bufnr)
+                if filepath:sub(1, #cwd) == cwd then
+                    for mark_key, mark in pairs(buffer_marks) do
+                        local text = utils.safe_get_line(bufnr, mark.line - 1)
+                        table.insert(items, {
+                            bufnr = bufnr,
+                            lnum = mark.line,
+                            col = mark.col + 1,
+                            text = 'bookmark ' .. group_nr .. ': ' .. text,
+                        })
+                    end
+                end
+            else
+                group.marks[bufnr] = nil
+            end
         end
     end
 
