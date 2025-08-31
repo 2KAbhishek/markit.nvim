@@ -55,8 +55,11 @@ local function handle_mark_command(args)
             if scope == 'buffer' then
                 require('markit').mark_state:buffer_to_list('quickfixlist')
                 vim.cmd('copen')
-            elseif scope == 'project' or scope == 'global' then
-                require('markit').mark_state:global_to_list('quickfixlist')
+            elseif scope == 'project' then
+                require('markit').mark_state:project_to_list('quickfixlist')
+                vim.cmd('copen')
+            elseif scope == 'all' then
+                require('markit').mark_state:all_to_list('quickfixlist')
                 vim.cmd('copen')
             else
                 require('markit').mark_state:all_to_list('quickfixlist')
@@ -66,8 +69,10 @@ local function handle_mark_command(args)
             local scope = args[3] or 'all'
             if scope == 'buffer' then
                 require('markit').marks_list_buf()
-            elseif scope == 'project' or scope == 'global' then
-                require('markit').marks_list_global()
+            elseif scope == 'project' then
+                require('markit').marks_list_project()
+            elseif scope == 'all' then
+                require('markit').marks_list_all()
             else
                 require('markit').marks_list_all()
             end
@@ -96,6 +101,10 @@ local function handle_mark_command(args)
             require('markit').delete_line()
         elseif scope == 'buffer' then
             require('markit').delete_buf()
+        elseif scope == 'project' then
+            require('markit').delete_project()
+        elseif scope == 'all' then
+            require('markit').delete_all()
         else
             vim.notify(
                 "Unknown mark delete scope: '" .. scope .. "'. Expected one of: line, buffer, project, all",
@@ -335,7 +344,7 @@ local function complete_markit(arg_lead, cmd_line, cursor_pos)
             and args[3] == 'quickfix'
             and (arg_count == 3 or (arg_count == 4 and arg_lead ~= ''))
         then
-            local scopes = { 'buffer', 'project', 'global', 'all', 'type' }
+            local scopes = { 'buffer', 'project', 'all', 'type' }
             return filter_by_prefix(scopes, arg_lead)
         elseif action == 'delete' and (arg_count == 2 or (arg_count == 3 and arg_lead ~= '')) then
             return filter_by_prefix(get_completion_options('mark_delete_scopes'), arg_lead)
@@ -454,7 +463,7 @@ local function setup_default_keybindings(config)
         { '<leader>mqm', ':Markit mark list quickfix all<cr>', 'All Marks → QuickFix' },
         { '<leader>mqb', ':Markit bookmark list quickfix all<cr>', 'All Bookmarks → QuickFix' },
         { '<leader>mqM', ':Markit mark list quickfix buffer<cr>', 'Buffer Marks → QuickFix' },
-        { '<leader>mqg', ':Markit mark list quickfix global<cr>', 'Global Marks → QuickFix' },
+        { '<leader>mqg', ':Markit mark list quickfix all<cr>', 'All Marks → QuickFix' },
     }
 
     for i, _ in ipairs(config.bookmarks) do
