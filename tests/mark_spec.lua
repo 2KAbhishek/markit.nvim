@@ -114,7 +114,9 @@ describe('markit.mark', function()
         describe('delete_project_marks', function()
             it('shows warning when not in git repository', function()
                 local notify_spy = spy.on(vim, 'notify')
-                utils.get_git_root = function() return nil end
+                utils.get_git_root = function()
+                    return nil
+                end
 
                 mark_state:delete_project_marks()
 
@@ -124,7 +126,9 @@ describe('markit.mark', function()
 
             it('deletes marks in git repository', function()
                 local git_root = '/home/user/project/'
-                utils.get_git_root = function() return git_root end
+                utils.get_git_root = function()
+                    return git_root
+                end
 
                 local bufnr = vim.api.nvim_create_buf(false, true)
                 vim.api.nvim_buf_set_name(bufnr, '/home/user/project/file.lua')
@@ -155,7 +159,9 @@ describe('markit.mark', function()
 
             it('ignores files outside git repository', function()
                 local git_root = '/home/user/project/'
-                utils.get_git_root = function() return git_root end
+                utils.get_git_root = function()
+                    return git_root
+                end
 
                 local bufnr = vim.api.nvim_create_buf(false, true)
                 vim.api.nvim_buf_set_name(bufnr, '/home/user/other/file.lua')
@@ -230,14 +236,15 @@ describe('markit.mark', function()
         describe('project_to_list', function()
             it('shows warning when not in git repository', function()
                 local notify_spy = spy.on(vim, 'notify')
-                utils.get_git_root = function() return nil end
+                utils.get_git_root = function()
+                    return nil
+                end
 
                 mark_state:project_to_list()
 
                 assert.spy(notify_spy).was_called_with('Not in a git repository', vim.log.levels.WARN)
                 notify_spy:revert()
             end)
-
         end)
     end)
 end)

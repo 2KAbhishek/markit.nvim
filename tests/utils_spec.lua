@@ -116,8 +116,12 @@ describe('markit.utils', function()
 
         it('returns git root with trailing slash', function()
             local mock_handle = {
-                read = function() return '/home/user/project' end,
-                close = function() return true end
+                read = function()
+                    return '/home/user/project'
+                end,
+                close = function()
+                    return true
+                end,
             }
             io.popen = function(cmd)
                 assert.equals('git rev-parse --show-toplevel 2>/dev/null', cmd)
@@ -130,10 +134,16 @@ describe('markit.utils', function()
 
         it('preserves existing trailing slash', function()
             local mock_handle = {
-                read = function() return '/home/user/project/' end,
-                close = function() return true end
+                read = function()
+                    return '/home/user/project/'
+                end,
+                close = function()
+                    return true
+                end,
             }
-            io.popen = function() return mock_handle end
+            io.popen = function()
+                return mock_handle
+            end
 
             local result = utils.get_git_root()
             assert.equals('/home/user/project/', result)
@@ -141,10 +151,16 @@ describe('markit.utils', function()
 
         it('handles newlines in git output', function()
             local mock_handle = {
-                read = function() return '/home/user/project\n' end,
-                close = function() return true end
+                read = function()
+                    return '/home/user/project\n'
+                end,
+                close = function()
+                    return true
+                end,
             }
-            io.popen = function() return mock_handle end
+            io.popen = function()
+                return mock_handle
+            end
 
             local result = utils.get_git_root()
             assert.equals('/home/user/project/', result)
@@ -152,10 +168,16 @@ describe('markit.utils', function()
 
         it('returns nil when not in git repository', function()
             local mock_handle = {
-                read = function() return '' end,
-                close = function() return false end
+                read = function()
+                    return ''
+                end,
+                close = function()
+                    return false
+                end,
             }
-            io.popen = function() return mock_handle end
+            io.popen = function()
+                return mock_handle
+            end
 
             local result = utils.get_git_root()
             assert.is_nil(result)
@@ -163,17 +185,25 @@ describe('markit.utils', function()
 
         it('returns nil when git command fails', function()
             local mock_handle = {
-                read = function() return nil end,
-                close = function() return false end
+                read = function()
+                    return nil
+                end,
+                close = function()
+                    return false
+                end,
             }
-            io.popen = function() return mock_handle end
+            io.popen = function()
+                return mock_handle
+            end
 
             local result = utils.get_git_root()
             assert.is_nil(result)
         end)
 
         it('returns nil when popen fails', function()
-            io.popen = function() return nil end
+            io.popen = function()
+                return nil
+            end
 
             local result = utils.get_git_root()
             assert.is_nil(result)
@@ -181,10 +211,16 @@ describe('markit.utils', function()
 
         it('handles empty git output', function()
             local mock_handle = {
-                read = function() return '' end,
-                close = function() return true end
+                read = function()
+                    return ''
+                end,
+                close = function()
+                    return true
+                end,
             }
-            io.popen = function() return mock_handle end
+            io.popen = function()
+                return mock_handle
+            end
 
             local result = utils.get_git_root()
             assert.is_nil(result)
