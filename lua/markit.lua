@@ -71,6 +71,14 @@ function M.delete_buf()
     M.mark_state:delete_buf_marks()
 end
 
+function M.delete_project()
+    M.mark_state:delete_project_marks()
+end
+
+function M.delete_all()
+    M.mark_state:delete_all_marks()
+end
+
 function M.preview()
     M.mark_state:preview_mark()
 end
@@ -154,6 +162,10 @@ end
 
 function M.marks_list_global()
     picker.marks_list_global(M.mark_state)
+end
+
+function M.marks_list_project()
+    picker.marks_list_project(M.mark_state)
 end
 
 function M.bookmarks_list_all()
