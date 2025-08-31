@@ -347,6 +347,25 @@ function M.marks_list_all(mark_state)
     end)
 end
 
+function M.marks_list_global(mark_state)
+    local results = mark_state:get_global_list()
+    if not results or #results == 0 then
+        vim.notify('No global marks found', vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'Global Marks',
+            entry_maker = marks_entry_maker,
+            preview_generator = generate_preview,
+            preview_ft = 'markdown',
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
 function M.bookmarks_list_all(bookmark_state)
     local results = bookmark_state:get_list({})
     if not results or #results == 0 then
