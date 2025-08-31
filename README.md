@@ -30,18 +30,17 @@
 
 </div>
 
-markit.nvim enhances marks experience in neovim, making it easier to navigate and manage marks across projects.
+markit.nvim enhances marks experience in neovim, making it easier to mark and navigate to specific lines of code in your projects.
 
 ## ✨ Features
 
-- View marks in the sign column
-- Add, delete, and toggle marks
-- Cycle between marks
-- Preview marks in floating windows
-- Extract marks to quickfix/location list
-- Set bookmarks with sign/virtual text annotations
-- Quick navigation across buffers
-- PickMe.nvim integration for marks and bookmarks with multiple picker support
+- Quickly manage and navigate marks across your entire codebase with an intuitive commands.
+- Set persistent bookmarks with visual sign/virtual text annotations, organized into customizable groups
+- Seamless picker integrations via pickme.nvim for fuzzy searching and quick access to your marks/bookmarks.
+- View marks and bookmarks in the sign column with customizable priorities and highlight groups.
+- Cycle between marks and bookmarks within buffers or across your entire project with git-aware scoping.
+- Preview marks in floating windows to see context before jumping, with enhanced file content display.
+- Extract marks and bookmarks to quickfix lists for batch operations and integration with other tools.
 
 ## ⚡ Setup
 
