@@ -3,17 +3,6 @@ local utils = require('markit.utils')
 
 local Mark = {}
 
--- basic structure: self.buffers is an array of tables indexed by bufnr,
--- where each table has the following keys:
---
--- placed_marks: a table of currently placed/registered marks in the buffer.
--- indexed by mark name and contains information about mark position and sign id.
---
--- marks_by_line: a table of lines that have marks on them. indexed by line number,
--- and contains an array of all marks currently set on that line.
---
--- lowest_available_mark: the next lowest alphabetical mark that is available.
-
 function Mark:register_mark(mark, line, col, bufnr)
     col = col or 1
     bufnr = bufnr or a.nvim_get_current_buf()

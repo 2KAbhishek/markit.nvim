@@ -4,15 +4,6 @@ local Path = require('plenary.path')
 
 local Bookmarks = {}
 
--- self.groups is an array of mark groups, with indexes from 1 to 10.
--- each element is a table with the following keys:
---  - ns: nvim namespace
---  - sign: the sign to use for this group
---  - virt_text: the virtual text to place at each mark
---  - marks: a table of marks, indexed by buffer number, then line number.
--- each mark is represented by a table with the following keys:
---   line, col, sign_id, extmark_id
---
 local function group_under_cursor(groups, bufnr, pos)
     bufnr = bufnr or a.nvim_get_current_buf()
     pos = pos or a.nvim_win_get_cursor(0)
