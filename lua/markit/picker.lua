@@ -385,6 +385,48 @@ function M.bookmarks_list_all(bookmark_state)
     end)
 end
 
+function M.bookmarks_list_buffer(bookmark_state)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local results = bookmark_state:get_buffer_list(bufnr)
+
+    if not results or #results == 0 then
+        vim.notify('No bookmarks found in current buffer', vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'Buffer Bookmarks',
+            entry_maker = bookmarks_entry_maker,
+            preview_generator = generate_preview,
+            preview_ft = 'markdown',
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
+function M.bookmarks_list_project(bookmark_state)
+    local cwd = vim.fn.getcwd()
+    local results = bookmark_state:get_project_list(cwd)
+
+    if not results or #results == 0 then
+        vim.notify('No bookmarks found in project', vim.log.levels.INFO)
+        return
+    end
+
+    vim.schedule(function()
+        pickme.custom_picker({
+            items = results,
+            title = 'Project Bookmarks',
+            entry_maker = bookmarks_entry_maker,
+            preview_generator = generate_preview,
+            preview_ft = 'markdown',
+            selection_handler = handle_selection,
+        })
+    end)
+end
+
 function M.bookmarks_list_group(bookmark_state, group_nr)
     local results = bookmark_state:get_list({ group = group_nr })
     if not results or #results == 0 then
