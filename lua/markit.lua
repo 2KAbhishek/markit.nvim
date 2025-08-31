@@ -152,8 +152,20 @@ function M.marks_list_all()
     picker.marks_list_all(M.mark_state)
 end
 
+function M.marks_list_global()
+    picker.marks_list_global(M.mark_state)
+end
+
 function M.bookmarks_list_all()
     picker.bookmarks_list_all(M.bookmark_state)
+end
+
+function M.bookmarks_list_buffer()
+    picker.bookmarks_list_buffer(M.bookmark_state)
+end
+
+function M.bookmarks_list_project()
+    picker.bookmarks_list_project(M.bookmark_state)
 end
 
 function M.bookmarks_list_group(group_nr)
