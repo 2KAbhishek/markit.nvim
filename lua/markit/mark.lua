@@ -393,6 +393,32 @@ function Mark:get_global_list()
     return items
 end
 
+function Mark:get_project_list(git_root)
+    local items = {}
+    for bufnr, buffer_state in pairs(self.buffers) do
+        if utils.is_valid_buffer(bufnr) then
+            local filepath = utils.safe_get_buf_name(bufnr)
+
+            if not git_root or (filepath:sub(1, #git_root) == git_root) then
+                for mark, data in pairs(buffer_state.placed_marks) do
+                    local text = utils.safe_get_line(bufnr, data.line - 1)
+                    table.insert(items, {
+                        bufnr = bufnr,
+                        lnum = data.line,
+                        col = data.col + 1,
+                        mark = mark,
+                        line = vim.trim(text),
+                        path = filepath,
+                    })
+                end
+            end
+        else
+            self.buffers[bufnr] = nil
+        end
+    end
+    return items
+end
+
 function Mark:buffer_to_list(list_type, bufnr)
     list_type = list_type or 'loclist'
 
@@ -454,6 +480,38 @@ function Mark:global_to_list(list_type)
                     col = data.col + 1,
                     text = 'mark ' .. mark .. ': ' .. text,
                 })
+            end
+        end
+    end
+
+    list_fn(items, 'r')
+end
+
+function Mark:project_to_list(list_type)
+    list_type = list_type or 'loclist'
+    local list_fn = utils.choose_list(list_type)
+    local git_root = utils.get_git_root()
+
+    if not git_root then
+        vim.notify('Not in a git repository', vim.log.levels.WARN)
+        return
+    end
+
+    local items = {}
+    for bufnr, buffer_state in pairs(self.buffers) do
+        if utils.is_valid_buffer(bufnr) then
+            local filepath = utils.safe_get_buf_name(bufnr)
+
+            if filepath:sub(1, #git_root) == git_root then
+                for mark, data in pairs(buffer_state.placed_marks) do
+                    local text = a.nvim_buf_get_lines(bufnr, data.line - 1, data.line, true)[1]
+                    table.insert(items, {
+                        bufnr = bufnr,
+                        lnum = data.line,
+                        col = data.col + 1,
+                        text = 'mark ' .. mark .. ': ' .. text,
+                    })
+                end
             end
         end
     end
