@@ -326,6 +326,31 @@ function Mark:get_all_list()
     return items
 end
 
+function Mark:get_global_list()
+    local items = {}
+    for bufnr, buffer_state in pairs(self.buffers) do
+        if utils.is_valid_buffer(bufnr) then
+            for mark, data in pairs(buffer_state.placed_marks) do
+                if utils.is_upper(mark) then
+                    local text = utils.safe_get_line(bufnr, data.line - 1)
+                    local path = utils.safe_get_buf_name(bufnr)
+                    table.insert(items, {
+                        bufnr = bufnr,
+                        lnum = data.line,
+                        col = data.col + 1,
+                        mark = mark,
+                        line = vim.trim(text),
+                        path = path,
+                    })
+                end
+            end
+        else
+            self.buffers[bufnr] = nil
+        end
+    end
+    return items
+end
+
 function Mark:buffer_to_list(list_type, bufnr)
     list_type = list_type or 'loclist'
 
