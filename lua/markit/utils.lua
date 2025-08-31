@@ -269,4 +269,25 @@ function M.safe_get_current_cursor()
     return pos
 end
 
+function M.get_git_root()
+    local handle = io.popen('git rev-parse --show-toplevel 2>/dev/null')
+    if not handle then
+        return nil
+    end
+
+    local result = handle:read('*a')
+    local success = handle:close()
+
+    if not success or not result or result == '' then
+        return nil
+    end
+
+    result = result:gsub('\n$', '')
+    if not result:match('/$') then
+        result = result .. '/'
+    end
+
+    return result
+end
+
 return M
