@@ -94,4 +94,65 @@ describe('markit.bookmark', function()
             vim.api.nvim_buf_delete(bufnr, { force = true })
         end)
     end)
+
+    describe('project functionality', function()
+        local utils = require('markit.utils')
+        local original_get_git_root
+
+        before_each(function()
+            original_get_git_root = utils.get_git_root
+        end)
+
+        after_each(function()
+            utils.get_git_root = original_get_git_root
+        end)
+
+        describe('get_project_list', function()
+            it('calls get_list with project=true', function()
+                local get_list_spy = spy.on(bookmark_state, 'get_list')
+                local refresh_spy = spy.on(bookmark_state, 'refresh')
+
+                bookmark_state:get_project_list()
+
+                assert.spy(refresh_spy).was_called()
+                assert.spy(get_list_spy).was_called_with(bookmark_state, { project = true })
+
+                get_list_spy:revert()
+                refresh_spy:revert()
+            end)
+        end)
+
+        describe('get_buffer_list', function()
+            it('calls get_list with buffer filter', function()
+                local bufnr = vim.api.nvim_create_buf(false, true)
+                local get_list_spy = spy.on(bookmark_state, 'get_list')
+                local refresh_spy = spy.on(bookmark_state, 'refresh')
+
+                bookmark_state:get_buffer_list(bufnr)
+
+                assert.spy(refresh_spy).was_called()
+                assert.spy(get_list_spy).was_called_with(bookmark_state, { buffer = bufnr })
+
+                get_list_spy:revert()
+                refresh_spy:revert()
+                vim.api.nvim_buf_delete(bufnr, { force = true })
+            end)
+        end)
+
+        describe('project_to_list', function()
+            it('shows warning when not in git repository', function()
+                local original_notify = vim.notify
+                local notify_spy = spy.on(vim, 'notify')
+                utils.get_git_root = function() return nil end
+
+                bookmark_state:project_to_list()
+
+                assert.spy(notify_spy).was_called_with('Not in a git repository', vim.log.levels.WARN)
+
+                notify_spy:revert()
+                vim.notify = original_notify
+            end)
+
+        end)
+    end)
 end)
