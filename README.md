@@ -240,10 +240,8 @@ The picker will show a preview of the file content around the marked line and al
 
 ### ✅ To-Do
 
-- [x] PickMe.nvim integration for multiple picker backends
-- [ ] Enhanced preview functionality
-- [ ] Custom notes for bookmarks
-- [ ] Export bookmarks as md - like a trace report with links
+- [ ] All marks are not showing up on `Markit mark list all`
+- [ ] When jumping to bookmarked files, treesitter highlighting is not applied
 
 ## ⛅ Behind The Code
 
