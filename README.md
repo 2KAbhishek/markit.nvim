@@ -47,7 +47,7 @@ markit.nvim enhances marks experience in neovim, making it easier to mark and na
 ### ⚙️ Requirements
 
 - Neovim >= 0.6.0
-- [pickme.nvim](https://github.com/2kabhishek/picker.nvim) (for picker integration)
+- [pickme.nvim](https://github.com/2kabhishek/pickme.nvim) (for picker integration)
 
 ### 💻 Installation
 
