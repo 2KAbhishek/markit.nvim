@@ -1,4 +1,4 @@
-*markit.txt*          For Neovim >= 0.8.0          Last change: 2025 August 31
+*markit.txt*         For Neovim >= 0.8.0        Last change: 2025 September 11
 
 ==============================================================================
 Table of Contents                                   *markit-table-of-contents*
@@ -30,7 +30,7 @@ SETUP                                                           *markit-setup*
 REQUIREMENTS ~
 
 - Neovim >= 0.6.0
-- pickme.nvim <https://github.com/2kabhishek/picker.nvim> (for picker integration)
+- pickme.nvim <https://github.com/2kabhishek/pickme.nvim> (for picker integration)
 
 
 INSTALLATION ~
