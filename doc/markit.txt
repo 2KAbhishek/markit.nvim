@@ -1,4 +1,4 @@
-*markit.txt*         For Neovim >= 0.8.0        Last change: 2025 September 11
+*markit.txt*          For Neovim >= 0.8.0         Last change: 2025 October 05
 
 ==============================================================================
 Table of Contents                                   *markit-table-of-contents*
@@ -73,7 +73,9 @@ CONFIGURATION ~
       excluded_filetypes = {},
       -- disables mark tracking for specific buftypes. default {}
       excluded_buftypes = {},
-      -- bookmark groups configuration
+      -- whether to enable the bookmark system. when disabled, improves startup performance, default true
+      enable_bookmarks = true,
+      -- bookmark groups configuration (only used when enable_bookmarks = true)
       bookmarks = {
         {
           sign = "⚑",           -- string: sign character to display (empty string to disable)
@@ -153,10 +155,10 @@ COMMAND SCOPES ~
 The unified command system supports different scopes for filtering marks and
 bookmarks:
 
-- **buffer**Show only marks/bookmarks in the current buffer
-- **project**Show marks/bookmarks within the current git repository (uses `git rev-parse --show-toplevel`)
-- **all**Show all marks/bookmarks across all buffers
-- **0-9**(Bookmarks only) Show bookmarks from a specific group
+- **buffer**: Show only marks/bookmarks in the current buffer
+- **project**: Show marks/bookmarks within the current git repository (uses `git rev-parse --show-toplevel`)
+- **all**: Show all marks/bookmarks across all buffers
+- **0-9**: (Bookmarks only) Show bookmarks from a specific group
 
 **Examples:**
 
