@@ -102,7 +102,9 @@ function M.refresh(force_reregister)
 
     force_reregister = force_reregister or false
     M.mark_state:refresh(nil, force_reregister)
-    M.bookmark_state:refresh()
+    if M.bookmark_state then
+        M.bookmark_state:refresh()
+    end
 end
 
 function M._on_delete()
@@ -209,17 +211,22 @@ local function assign_defaults(config)
     M.mark_state = mark.new()
     M.mark_state.builtin_marks = config.builtin_marks
 
-    M.bookmark_state = bookmark.new()
+    if config.enable_bookmarks then
+        M.bookmark_state = bookmark.new()
 
-    for i, bookmark_config in ipairs(config.bookmarks) do
-        local group_index = i - 1
-        if bookmark_config.sign == '' then
-            M.bookmark_state.signs[group_index] = nil
-        else
-            M.bookmark_state.signs[group_index] = bookmark_config.sign
+        for i, bookmark_config in ipairs(config.bookmarks) do
+            local group_index = i - 1
+            if bookmark_config.sign == '' then
+                M.bookmark_state.signs[group_index] = nil
+            else
+                M.bookmark_state.signs[group_index] = bookmark_config.sign
+            end
+            M.bookmark_state.virt_text[group_index] = bookmark_config.virt_text
+            M.bookmark_state.prompt_annotate[group_index] = bookmark_config.annotate
         end
-        M.bookmark_state.virt_text[group_index] = bookmark_config.virt_text
-        M.bookmark_state.prompt_annotate[group_index] = bookmark_config.annotate
+
+        M.bookmark_state.opt.signs = true
+        M.bookmark_state.opt.buf_signs = {}
     end
 
     local excluded_fts = {}
@@ -234,9 +241,6 @@ local function assign_defaults(config)
     end
     M.excluded_bts = excluded_bts
 
-    M.bookmark_state.opt.signs = true
-    M.bookmark_state.opt.buf_signs = {}
-
     M.mark_state.opt.signs = config.signs
     M.mark_state.opt.buf_signs = {}
     M.mark_state.opt.force_write_shada = config.force_write_shada
@@ -248,22 +252,30 @@ local function assign_defaults(config)
         mark_priority[1] = config.sign_priority.lower
         mark_priority[2] = config.sign_priority.upper
         mark_priority[3] = config.sign_priority.builtin
-        M.bookmark_state.priority = config.sign_priority.bookmark
+        if config.enable_bookmarks then
+            M.bookmark_state.priority = config.sign_priority.bookmark
+        end
     elseif type(config.sign_priority) == 'number' then
         mark_priority[1] = config.sign_priority
         mark_priority[2] = config.sign_priority
         mark_priority[3] = config.sign_priority
-        M.bookmark_state.priority = config.sign_priority
+        if config.enable_bookmarks then
+            M.bookmark_state.priority = config.sign_priority
+        end
     end
 
-    M.bookmark_state:load()
+    if config.enable_bookmarks then
+        M.bookmark_state:load()
+    end
 end
 
 function M.setup(opts)
     local config_module = require('markit.config')
     config_module.setup(opts)
     assign_defaults(config_module.config)
-    add_bookmark_commands(config_module.config.bookmarks)
+    if config_module.config.enable_bookmarks then
+        add_bookmark_commands(config_module.config.bookmarks)
+    end
     commands.setup(config_module.config)
     utils.setup_cache_handlers()
 end

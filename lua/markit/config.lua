@@ -39,6 +39,7 @@ local M = {}
 ---@field excluded_filetypes table : Filetypes to disable mark tracking for
 ---@field excluded_buftypes table : Buffer types to disable mark tracking for
 ---@field signs boolean : Whether to show signs in sign column
+---@field enable_bookmarks boolean : Whether to enable the bookmark system
 ---@field bookmarks MarkitBookmark[] : Array of bookmark group configurations
 ---@field preview MarkitPreviewOptions : Config options for markit preview
 ---@field icons MarkitIcons : List of icons used by Markit
@@ -61,6 +62,8 @@ M.config = {
 
     excluded_filetypes = {},
     excluded_buftypes = {},
+
+    enable_bookmarks = true,
 
     preview = {
         context_before = 10,

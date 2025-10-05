@@ -48,5 +48,20 @@ describe('markit.config', function()
             assert.equals(15, config_module.config.sign_priority.upper)
             assert.equals('📄', config_module.config.icons.file)
         end)
+
+        it('has enable_bookmarks option with default true', function()
+            config_module.setup()
+            assert.is_true(config_module.config.enable_bookmarks)
+        end)
+
+        it('allows disabling bookmarks via enable_bookmarks option', function()
+            local user_config = {
+                enable_bookmarks = false,
+            }
+
+            config_module.setup(user_config)
+
+            assert.is_false(config_module.config.enable_bookmarks)
+        end)
     end)
 end)

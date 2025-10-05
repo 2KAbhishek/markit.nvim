@@ -451,58 +451,61 @@ local function setup_default_keybindings(config)
         { '<leader>mD', ':Markit mark delete buffer<cr>', 'Delete Marks In Buffer' },
         { '<leader>mX', ':Markit mark delete<cr>', 'Delete Mark (Interactive)' },
 
-        { '<leader>mb', ':Markit bookmark list all<cr>', 'All Bookmarks' },
-        { '<leader>mx', ':Markit bookmark delete<cr>', 'Delete Bookmark at Cursor' },
-        { '<leader>ma', ':Markit bookmark annotate<cr>', 'Annotate Bookmark' },
-
-        { '<leader>ml', ':Markit bookmark next<cr>', 'Next Bookmark' },
-        { '<leader>mh', ':Markit bookmark prev<cr>', 'Previous Bookmark' },
-
-        { '<leader>mv', ':Markit bookmark signs<cr>', 'Toggle Signs' },
-
         { '<leader>mqm', ':Markit mark list quickfix all<cr>', 'All Marks → QuickFix' },
-        { '<leader>mqb', ':Markit bookmark list quickfix all<cr>', 'All Bookmarks → QuickFix' },
         { '<leader>mqM', ':Markit mark list quickfix buffer<cr>', 'Buffer Marks → QuickFix' },
         { '<leader>mqg', ':Markit mark list quickfix all<cr>', 'All Marks → QuickFix' },
     }
 
-    for i, _ in ipairs(config.bookmarks) do
-        local group_index = i - 1
-        table.insert(mappings, {
-            string.format('<leader>m%d', group_index),
-            string.format(':Markit bookmark toggle %d<cr>', group_index),
-            string.format('Toggle Group %d Bookmark', group_index),
-        })
+    if config.enable_bookmarks then
+        table.insert(mappings, { '<leader>mb', ':Markit bookmark list all<cr>', 'All Bookmarks' })
+        table.insert(mappings, { '<leader>mx', ':Markit bookmark delete<cr>', 'Delete Bookmark at Cursor' })
+        table.insert(mappings, { '<leader>ma', ':Markit bookmark annotate<cr>', 'Annotate Bookmark' })
+        table.insert(mappings, { '<leader>ml', ':Markit bookmark next<cr>', 'Next Bookmark' })
+        table.insert(mappings, { '<leader>mh', ':Markit bookmark prev<cr>', 'Previous Bookmark' })
+        table.insert(mappings, { '<leader>mv', ':Markit bookmark signs<cr>', 'Toggle Signs' })
+        table.insert(
+            mappings,
+            { '<leader>mqb', ':Markit bookmark list quickfix all<cr>', 'All Bookmarks → QuickFix' }
+        )
 
-        table.insert(mappings, {
-            string.format('<leader>mp%d', group_index),
-            string.format(':Markit bookmark prev %d<cr>', group_index),
-            string.format('Previous Group %d Bookmark', group_index),
-        })
+        for i, _ in ipairs(config.bookmarks) do
+            local group_index = i - 1
+            table.insert(mappings, {
+                string.format('<leader>m%d', group_index),
+                string.format(':Markit bookmark toggle %d<cr>', group_index),
+                string.format('Toggle Group %d Bookmark', group_index),
+            })
 
-        table.insert(mappings, {
-            string.format('<leader>mn%d', group_index),
-            string.format(':Markit bookmark next %d<cr>', group_index),
-            string.format('Next Group %d Bookmark', group_index),
-        })
+            table.insert(mappings, {
+                string.format('<leader>mp%d', group_index),
+                string.format(':Markit bookmark prev %d<cr>', group_index),
+                string.format('Previous Group %d Bookmark', group_index),
+            })
 
-        table.insert(mappings, {
-            string.format('<leader>mg%d', group_index),
-            string.format(':Markit bookmark list %d<cr>', group_index),
-            string.format('Group %d Bookmarks', group_index),
-        })
+            table.insert(mappings, {
+                string.format('<leader>mn%d', group_index),
+                string.format(':Markit bookmark next %d<cr>', group_index),
+                string.format('Next Group %d Bookmark', group_index),
+            })
 
-        table.insert(mappings, {
-            string.format('<leader>mq%d', group_index),
-            string.format(':Markit bookmark list quickfix %d<cr>', group_index),
-            string.format('Group %d Bookmarks → QuickFix', group_index),
-        })
+            table.insert(mappings, {
+                string.format('<leader>mg%d', group_index),
+                string.format(':Markit bookmark list %d<cr>', group_index),
+                string.format('Group %d Bookmarks', group_index),
+            })
 
-        table.insert(mappings, {
-            string.format('<leader>mc%d', group_index),
-            string.format(':Markit bookmark delete %d<cr>', group_index),
-            string.format('Delete Group %d Bookmarks', group_index),
-        })
+            table.insert(mappings, {
+                string.format('<leader>mq%d', group_index),
+                string.format(':Markit bookmark list quickfix %d<cr>', group_index),
+                string.format('Group %d Bookmarks → QuickFix', group_index),
+            })
+
+            table.insert(mappings, {
+                string.format('<leader>mc%d', group_index),
+                string.format(':Markit bookmark delete %d<cr>', group_index),
+                string.format('Delete Group %d Bookmarks', group_index),
+            })
+        end
     end
 
     for _, mapping in ipairs(mappings) do
@@ -522,15 +525,25 @@ local function setup_highlights()
     set_hl(0, 'MarkVirtTextHL', { link = 'Comment', default = true })
 end
 
-local function setup_autocommands()
-    vim.cmd([[augroup Marks_autocmds
-    autocmd!
-    autocmd BufEnter * lua require'markit'.refresh(true)
-    autocmd CursorHold * lua require'markit'.refresh()
-    autocmd BufDelete * lua require'markit'._on_delete()
-    autocmd VimLeavePre * lua require'markit'.bookmark_state:save()
-    autocmd DirChanged * lua require'markit'.bookmark_state:load()
-  augroup end]])
+local function setup_autocommands(config)
+    local autocmds = {
+        'augroup Marks_autocmds',
+        '  autocmd!',
+        "  autocmd BufEnter * lua require'markit'.refresh(true)",
+        "  autocmd CursorHold * lua require'markit'.refresh()",
+        "  autocmd BufDelete * lua require'markit'._on_delete()",
+    }
+
+    if config.enable_bookmarks then
+        table.insert(autocmds, "  autocmd VimLeavePre * lua require'markit'.bookmark_state:save()")
+        table.insert(autocmds, "  autocmd DirChanged * lua require'markit'.bookmark_state:load()")
+    end
+
+    table.insert(autocmds, 'augroup end')
+
+    for _, cmd in ipairs(autocmds) do
+        vim.cmd(cmd)
+    end
 end
 
 function M.setup(config)
@@ -544,7 +557,7 @@ function M.setup(config)
         setup_default_keybindings(config)
     end
     setup_highlights()
-    setup_autocommands()
+    setup_autocommands(config)
 end
 
 return M

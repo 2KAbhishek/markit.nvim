@@ -88,7 +88,9 @@ require('markit').setup {
   excluded_filetypes = {},
   -- disables mark tracking for specific buftypes. default {}
   excluded_buftypes = {},
-  -- bookmark groups configuration
+  -- whether to enable the bookmark system. when disabled, improves startup performance, default true
+  enable_bookmarks = true,
+  -- bookmark groups configuration (only used when enable_bookmarks = true)
   bookmarks = {
     {
       sign = "⚑",           -- string: sign character to display (empty string to disable)
