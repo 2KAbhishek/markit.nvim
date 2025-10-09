@@ -40,8 +40,8 @@ With lazy.nvim
 >lua
     {
         '2kabhishek/markit.nvim',
-        dependencies = { '2kabhishek/pickme.nvim' },
-        config = load_config('tools.marks'),
+        dependencies = { '2kabhishek/pickme.nvim', 'nvim-lua/plenary.nvim' },
+        opts = {}, -- Add your configuration here, required if you are not calling markit.setup manually elsewhere
         event = { 'BufReadPre', 'BufNewFile' },
     },
 <
