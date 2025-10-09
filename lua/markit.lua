@@ -115,8 +115,10 @@ function M._on_delete()
     end
 
     M.mark_state.buffers[bufnr] = nil
-    for _, group in pairs(M.bookmark_state.groups) do
-        group.marks[bufnr] = nil
+    if M.bookmark_state then
+        for _, group in pairs(M.bookmark_state.groups) do
+            group.marks[bufnr] = nil
+        end
     end
 end
 
